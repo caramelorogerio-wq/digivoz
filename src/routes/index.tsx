@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { transcribeAudio } from "@/lib/transcribe.functions";
 import { exportReportPdf } from "@/lib/report-pdf";
@@ -22,17 +15,17 @@ import { exportReportPdf } from "@/lib/report-pdf";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PatoVoz — Transcrição de Relatórios de Anatomia Patológica" },
+      { title: "DermaVoz — Transcrição de Relatórios de Dermatopatologia" },
       {
         name: "description",
         content:
-          "Ditado e transcrição automática de relatórios de autópsia e exames histológicos em português europeu, com edição clínica e exportação em PDF.",
+          "Ditado e transcrição automática de exames macroscópicos em dermatopatologia, em português europeu, com edição clínica e exportação em PDF.",
       },
-      { property: "og:title", content: "PatoVoz — Transcrição para Médicos Patologistas" },
+      { property: "og:title", content: "DermaVoz — Transcrição para Dermatopatologistas" },
       {
         property: "og:description",
         content:
-          "Grave ou carregue ditados clínicos, obtenha relatórios estruturados em pt-PT e exporte em PDF.",
+          "Grave ou carregue ditados clínicos de exame macroscópico, obtenha relatórios estruturados em pt-PT e exporte em PDF.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -55,7 +48,6 @@ const blobToBase64 = (blob: Blob) =>
 function Index() {
   const transcrever = useServerFn(transcribeAudio);
   const [aTranscrever, setATranscrever] = useState(false);
-  const [tipo, setTipo] = useState<"autopsia" | "histologico">("autopsia");
   const [numeroProcesso, setNumeroProcesso] = useState("");
   const [doente, setDoente] = useState("");
   const [patologista, setPatologista] = useState("");
@@ -70,7 +62,6 @@ function Index() {
         data: {
           audioBase64,
           format: format as "wav" | "mp3" | "webm" | "m4a" | "ogg" | "aac" | "flac",
-          tipo,
         },
       });
       if (!resultado.text) {
@@ -91,7 +82,7 @@ function Index() {
       toast.error("Não há texto para exportar.");
       return;
     }
-    exportReportPdf({ tipo, numeroProcesso, doente, patologista, data, texto });
+    exportReportPdf({ numeroProcesso, doente, patologista, data, texto });
     toast.success("Relatório PDF gerado.");
   };
 
@@ -105,9 +96,9 @@ function Index() {
             <Stethoscope className="size-5" />
           </span>
           <div>
-            <h1 className="text-xl font-semibold text-primary-foreground">PatoVoz</h1>
+            <h1 className="text-xl font-semibold text-primary-foreground">DermaVoz</h1>
             <p className="text-sm text-primary-foreground/75">
-              Transcrição de relatórios de anatomia patológica · pt-PT
+              Exame macroscópico em dermatopatologia · pt-PT
             </p>
           </div>
         </div>
@@ -118,28 +109,16 @@ function Index() {
           <h2 className="text-lg font-semibold text-foreground">Dados do exame</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <Label htmlFor="tipo">Tipo de relatório</Label>
-              <Select value={tipo} onValueChange={(v) => setTipo(v as typeof tipo)}>
-                <SelectTrigger id="tipo">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="autopsia">Autópsia</SelectItem>
-                  <SelectItem value="histologico">Exame histológico</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="processo">N.º de processo</Label>
               <Input
                 id="processo"
                 value={numeroProcesso}
                 onChange={(e) => setNumeroProcesso(e.target.value)}
-                placeholder="AP-2026-0001"
+                placeholder="DP-2026-0001"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="doente">Doente / Cadáver</Label>
+              <Label htmlFor="doente">Doente</Label>
               <Input
                 id="doente"
                 value={doente}
@@ -156,8 +135,8 @@ function Index() {
                 onChange={(e) => setData(e.target.value)}
               />
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="patologista">Médico patologista</Label>
+            <div className="space-y-2 lg:col-span-1">
+              <Label htmlFor="patologista">Médico</Label>
               <Input
                 id="patologista"
                 value={patologista}
