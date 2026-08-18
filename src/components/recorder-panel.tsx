@@ -118,7 +118,7 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       <section className="panel p-6">
         <h2 className="text-lg font-semibold text-foreground">Ficheiros de áudio</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Carregue um ditado já gravado em MP3, WAV, M4A ou OGG.
+          Carregue um ditado do exame macroscópico já gravado em MP3, WAV, M4A ou OGG.
         </p>
 
         <button
