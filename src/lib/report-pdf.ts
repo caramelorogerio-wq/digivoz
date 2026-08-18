@@ -66,7 +66,7 @@ export function exportReportPdf(meta: ReportMeta) {
 
   doc.setFontSize(11);
   meta.texto.split(/\r?\n/).forEach((raw) => {
-    const line = raw.trim();
+    const line = raw.replace(/\*\*/g, "").replace(/^#+\s*/, "").trim();
     if (!line) {
       y += 10;
       return;
