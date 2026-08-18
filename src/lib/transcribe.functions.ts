@@ -4,15 +4,10 @@ import { z } from "zod";
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
   format: z.enum(["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"]),
-  tipo: z.enum(["autopsia", "histologico"]),
 });
 
-const PROMPTS: Record<string, string> = {
-  autopsia:
-    "És um assistente de transcrição médica para patologistas em Portugal. Transcreve integralmente o áudio em português europeu (pt-PT), com terminologia médica e anatomopatológica correcta. Organiza o texto num relatório de autópsia com as secções: IDENTIFICAÇÃO, EXAME EXTERNO, EXAME INTERNO, ACHADOS RELEVANTES, CAUSA DE MORTE, CONCLUSÃO. Inclui apenas informação presente no áudio; omite secções sem conteúdo. Não uses markdown (sem asteriscos, cardinais ou listas com marcadores); escreve os títulos de secção em maiúsculas numa linha própria. Não acrescentes comentários nem explicações — devolve apenas o texto do relatório.",
-  histologico:
-    "És um assistente de transcrição médica para patologistas em Portugal. Transcreve integralmente o áudio em português europeu (pt-PT), com terminologia histopatológica correcta. Organiza o texto num relatório de exame histológico com as secções: IDENTIFICAÇÃO, MATERIAL RECEBIDO, EXAME MACROSCÓPICO, EXAME MICROSCÓPICO, DIAGNÓSTICO. Inclui apenas informação presente no áudio; omite secções sem conteúdo. Não uses markdown (sem asteriscos, cardinais ou listas com marcadores); escreve os títulos de secção em maiúsculas numa linha própria. Não acrescentes comentários nem explicações — devolve apenas o texto do relatório.",
-};
+const PROMPT =
+  "És um assistente de transcrição médica para dermatopatologistas em Portugal. Transcreve integralmente o áudio em português europeu (pt-PT), com terminologia dermatológica e dermatopatológica correcta. Organiza o texto num relatório de exame macroscópico em dermatopatologia com as secções: IDENTIFICAÇÃO, NOTA CLÍNICA, AMOSTRA RECEBIDA, EXAME MACROSCÓPICO, DIAGNÓSTICO. Inclui apenas informação presente no áudio; omite secções sem conteúdo. Não uses markdown (sem asteriscos, cardinais ou listas com marcadores); escreve os títulos de secção em maiúsculas numa linha própria. Não acrescentes comentários nem explicações — devolve apenas o texto do relatório.";
 
 export const transcribeAudio = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
@@ -31,7 +26,7 @@ export const transcribeAudio = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: PROMPTS[data.tipo] },
+          { role: "system", content: PROMPT },
           {
             role: "user",
             content: [

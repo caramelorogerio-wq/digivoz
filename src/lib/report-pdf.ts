@@ -1,7 +1,6 @@
 import { jsPDF } from "jspdf";
 
 export type ReportMeta = {
-  tipo: "autopsia" | "histologico";
   numeroProcesso: string;
   doente: string;
   patologista: string;
@@ -9,10 +8,8 @@ export type ReportMeta = {
   texto: string;
 };
 
-const TITULOS: Record<ReportMeta["tipo"], string> = {
-  autopsia: "RELATÓRIO DE AUTÓPSIA",
-  histologico: "RELATÓRIO DE EXAME HISTOLÓGICO",
-};
+const TITULO = "RELATÓRIO DE EXAME MACROSCÓPICO";
+const SUBTITULO = "Serviço de Dermatopatologia";
 
 const isHeading = (line: string) =>
   /^[A-ZÁÂÃÀÉÊÍÓÔÕÚÇ0-9 .,'()/-]{4,}:?$/.test(line.trim()) && line.trim().length < 60;
@@ -37,18 +34,18 @@ export function exportReportPdf(meta: ReportMeta) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(TITULOS[meta.tipo], margin, 44);
+  doc.text(TITULO, margin, 44);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Serviço de Anatomia Patológica", margin, 64);
+  doc.text(SUBTITULO, margin, 64);
   y = 122;
 
   doc.setTextColor(30, 41, 59);
   doc.setFontSize(10);
   const linhas: Array<[string, string]> = [
     ["N.º de processo", meta.numeroProcesso || "—"],
-    ["Doente / Cadáver", meta.doente || "—"],
-    ["Médico patologista", meta.patologista || "—"],
+    ["Doente", meta.doente || "—"],
+    ["Médico", meta.patologista || "—"],
     ["Data", meta.data || "—"],
   ];
   linhas.forEach(([label, value]) => {
@@ -95,8 +92,6 @@ export function exportReportPdf(meta: ReportMeta) {
     );
   }
 
-  const nome = `${meta.tipo === "autopsia" ? "autopsia" : "histologico"}-${
-    meta.numeroProcesso || "relatorio"
-  }.pdf`;
+  const nome = `dermatopatologia-${meta.numeroProcesso || "relatorio"}.pdf`;
   doc.save(nome.replace(/\s+/g, "-").toLowerCase());
 }
