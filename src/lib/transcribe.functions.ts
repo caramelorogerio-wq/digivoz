@@ -30,7 +30,7 @@ export const transcribeAudio = createServerFn({ method: "POST" })
           {
             role: "user",
             content: [
-              { type: "text", text: "Transcreve e estrutura este ditado clínico." },
+              { type: "text", text: "Transcreve este áudio." },
               {
                 type: "input_audio",
                 input_audio: { data: data.audioBase64, format: data.format },
