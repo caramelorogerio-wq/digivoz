@@ -78,7 +78,7 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       <section className="panel p-6">
         <h2 className="text-lg font-semibold text-foreground">Gravação de voz</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Dite o relatório directamente para o microfone. A transcrição inicia ao parar a gravação.
+          Fale directamente para o microfone. A transcrição inicia ao parar a gravação.
         </p>
 
         <div className="mt-6 flex flex-col items-center gap-4">
