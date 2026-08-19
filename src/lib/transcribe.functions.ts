@@ -7,7 +7,7 @@ const inputSchema = z.object({
 });
 
 const PROMPT =
-  "És um assistente de transcrição médica para dermatopatologistas em Portugal. Transcreve integralmente o áudio em português europeu (pt-PT), com terminologia dermatológica e dermatopatológica correcta. Organiza o texto num relatório de exame macroscópico em dermatopatologia com as secções: IDENTIFICAÇÃO, NOTA CLÍNICA, AMOSTRA RECEBIDA, EXAME MACROSCÓPICO, DIAGNÓSTICO. Inclui apenas informação presente no áudio; omite secções sem conteúdo. Não uses markdown (sem asteriscos, cardinais ou listas com marcadores); escreve os títulos de secção em maiúsculas numa linha própria. Não acrescentes comentários nem explicações — devolve apenas o texto do relatório.";
+  "Transcreve integralmente o áudio em português europeu (pt-PT), palavra por palavra, com pontuação correcta e terminologia médica/dermatológica correctamente grafada. Não resumas, não reorganizes, não acrescentes títulos, secções, comentários ou markdown. Devolve apenas o texto transcrito.";
 
 export const transcribeAudio = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
