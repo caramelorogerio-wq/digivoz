@@ -1,31 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Stethoscope, FileDown, Eraser } from "lucide-react";
+import { Mic, FileDown, Eraser, Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { transcribeAudio } from "@/lib/transcribe.functions";
-import { exportReportPdf } from "@/lib/report-pdf";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DermaVoz — Transcrição de Relatórios de Dermatopatologia" },
+      { title: "DermaVoz — Gravar voz e exportar como texto" },
       {
         name: "description",
         content:
-          "Ditado e transcrição automática de exames macroscópicos em dermatopatologia, em português europeu, com edição clínica e exportação em PDF.",
+          "Grave a sua voz ou carregue um ficheiro áudio, obtenha a transcrição em português europeu e exporte-a como ficheiro de texto.",
       },
-      { property: "og:title", content: "DermaVoz — Transcrição para Dermatopatologistas" },
+      { property: "og:title", content: "DermaVoz — Voz para texto em pt-PT" },
       {
         property: "og:description",
         content:
-          "Grave ou carregue ditados clínicos de exame macroscópico, obtenha relatórios estruturados em pt-PT e exporte em PDF.",
+          "Gravação de voz com transcrição automática em português europeu e exportação em ficheiro de texto.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -48,10 +45,6 @@ const blobToBase64 = (blob: Blob) =>
 function Index() {
   const transcrever = useServerFn(transcribeAudio);
   const [aTranscrever, setATranscrever] = useState(false);
-  const [numeroProcesso, setNumeroProcesso] = useState("");
-  const [doente, setDoente] = useState("");
-  const [patologista, setPatologista] = useState("");
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
   const [texto, setTexto] = useState("");
 
   const handleAudio = async (blob: Blob, format: string) => {
@@ -82,8 +75,20 @@ function Index() {
       toast.error("Não há texto para exportar.");
       return;
     }
-    exportReportPdf({ numeroProcesso, doente, patologista, data, texto });
-    toast.success("Relatório PDF gerado.");
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `transcricao-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Ficheiro de texto exportado.");
+  };
+
+  const copiar = async () => {
+    if (!texto.trim()) return;
+    await navigator.clipboard.writeText(texto);
+    toast.success("Texto copiado.");
   };
 
   const palavras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
@@ -91,71 +96,29 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-primary">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-5">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-5">
           <span className="flex size-10 items-center justify-center rounded-md bg-clinical text-clinical-foreground">
-            <Stethoscope className="size-5" />
+            <Mic className="size-5" />
           </span>
           <div>
             <h1 className="text-xl font-semibold text-primary-foreground">DermaVoz</h1>
             <p className="text-sm text-primary-foreground/75">
-              Exame macroscópico em dermatopatologia · pt-PT
+              Gravar voz e exportar como texto · pt-PT
             </p>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <section className="panel mb-6 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Dados do exame</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="processo">N.º de processo</Label>
-              <Input
-                id="processo"
-                value={numeroProcesso}
-                onChange={(e) => setNumeroProcesso(e.target.value)}
-                placeholder="DP-2026-0001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="doente">Doente</Label>
-              <Input
-                id="doente"
-                value={doente}
-                onChange={(e) => setDoente(e.target.value)}
-                placeholder="Iniciais ou identificação"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="data">Data</Label>
-              <Input
-                id="data"
-                type="date"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 lg:col-span-1">
-              <Label htmlFor="patologista">Médico</Label>
-              <Input
-                id="patologista"
-                value={patologista}
-                onChange={(e) => setPatologista(e.target.value)}
-                placeholder="Dr.(a) …"
-              />
-            </div>
-          </div>
-        </section>
-
+      <main className="mx-auto max-w-5xl px-6 py-8">
         <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <RecorderPanel disabled={aTranscrever} onAudio={handleAudio} />
 
           <section className="panel flex flex-col p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Editor do relatório</h2>
+                <h2 className="text-lg font-semibold text-foreground">Texto transcrito</h2>
                 <p className="text-sm text-muted-foreground">
-                  Reveja e corrija a transcrição antes de exportar.
+                  Reveja e corrija o texto antes de exportar.
                 </p>
               </div>
               <span className="text-xs text-muted-foreground">{palavras} palavras</span>
@@ -165,13 +128,17 @@ function Index() {
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               placeholder="O texto transcrito aparecerá aqui. Pode também escrever ou colar directamente."
-              className="mt-4 min-h-[460px] flex-1 resize-none font-mono text-sm leading-relaxed"
+              className="mt-4 min-h-[420px] flex-1 resize-none text-sm leading-relaxed"
             />
 
             <div className="mt-4 flex flex-wrap gap-3">
               <Button onClick={exportar} className="gap-2">
                 <FileDown className="size-4" />
-                Exportar como Relatório PDF
+                Exportar como texto (.txt)
+              </Button>
+              <Button variant="outline" className="gap-2" onClick={copiar} disabled={!texto}>
+                <Copy className="size-4" />
+                Copiar
               </Button>
               <Button
                 variant="outline"
@@ -180,7 +147,7 @@ function Index() {
                 disabled={!texto}
               >
                 <Eraser className="size-4" />
-                Limpar texto
+                Limpar
               </Button>
             </div>
           </section>
@@ -188,7 +155,7 @@ function Index() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        Conteúdo clínico confidencial. Reveja sempre a transcrição antes de validar o relatório.
+        Reveja sempre a transcrição antes de a utilizar.
       </footer>
     </div>
   );
