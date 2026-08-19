@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      medicos: {
+        Row: {
+          cedula: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cedula?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          nome?: string
+          updated_at?: string
+        }
+        Update: {
+          cedula?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pacientes: {
+        Row: {
+          created_at: string
+          data_nascimento: string | null
+          id: string
+          medico_id: string
+          nome: string
+          notas: string | null
+          numero_processo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_nascimento?: string | null
+          id?: string
+          medico_id: string
+          nome: string
+          notas?: string | null
+          numero_processo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_nascimento?: string | null
+          id?: string
+          medico_id?: string
+          nome?: string
+          notas?: string | null
+          numero_processo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      relatorios_transcritos: {
+        Row: {
+          created_at: string
+          id: string
+          medico_id: string
+          paciente_id: string | null
+          texto: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medico_id: string
+          paciente_id?: string | null
+          texto?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medico_id?: string
+          paciente_id?: string | null
+          texto?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relatorios_transcritos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "pacientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
