@@ -118,6 +118,27 @@ function AppPage() {
     }
   };
 
+  const otimizarTexto = async () => {
+    if (!texto.trim()) {
+      toast.error("Não há texto para otimizar.");
+      return;
+    }
+    setAOtimizar(true);
+    try {
+      const resultado = await otimizar({ data: { texto } });
+      if (!resultado.text) {
+        toast.error("A IA não devolveu texto revisto.");
+        return;
+      }
+      setTexto(resultado.text);
+      toast.success("Relatório otimizado. Reveja as alterações.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao otimizar o relatório.");
+    } finally {
+      setAOtimizar(false);
+    }
+  };
+
   const criarPaciente = async () => {
     if (!novoPaciente.trim()) return;
     const { data: sessao } = await supabase.auth.getUser();
