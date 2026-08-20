@@ -312,7 +312,19 @@ function AppPage() {
               />
 
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button onClick={guardar} className="gap-2">
+                <Button
+                  onClick={otimizarTexto}
+                  className="gap-2"
+                  disabled={aOtimizar || !texto.trim()}
+                >
+                  {aOtimizar ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-4" />
+                  )}
+                  Otimizar Relatório com IA
+                </Button>
+                <Button variant="outline" onClick={guardar} className="gap-2">
                   <Save className="size-4" />
                   Guardar relatório
                 </Button>
