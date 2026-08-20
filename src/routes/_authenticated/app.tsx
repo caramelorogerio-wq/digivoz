@@ -67,8 +67,10 @@ const blobToBase64 = (blob: Blob) =>
 function AppPage() {
   const navigate = useNavigate();
   const transcrever = useServerFn(transcribeAudio);
+  const otimizar = useServerFn(optimizeReport);
 
   const [aTranscrever, setATranscrever] = useState(false);
+  const [aOtimizar, setAOtimizar] = useState(false);
   const [texto, setTexto] = useState("");
   const [titulo, setTitulo] = useState("");
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
