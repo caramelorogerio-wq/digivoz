@@ -1,7 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState } from "react";
-import { Mic, FileDown, Eraser, Copy, Save, LogOut, UserPlus, Trash2 } from "lucide-react";
+import {
+  Mic,
+  FileDown,
+  Eraser,
+  Copy,
+  Save,
+  LogOut,
+  UserPlus,
+  Trash2,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
-import { transcribeAudio } from "@/lib/transcribe.functions";
+import { transcribeAudio, optimizeReport } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -56,8 +67,10 @@ const blobToBase64 = (blob: Blob) =>
 function AppPage() {
   const navigate = useNavigate();
   const transcrever = useServerFn(transcribeAudio);
+  const otimizar = useServerFn(optimizeReport);
 
   const [aTranscrever, setATranscrever] = useState(false);
+  const [aOtimizar, setAOtimizar] = useState(false);
   const [texto, setTexto] = useState("");
   const [titulo, setTitulo] = useState("");
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
@@ -102,6 +115,27 @@ function AppPage() {
       toast.error(e instanceof Error ? e.message : "Erro ao transcrever o áudio.");
     } finally {
       setATranscrever(false);
+    }
+  };
+
+  const otimizarTexto = async () => {
+    if (!texto.trim()) {
+      toast.error("Não há texto para otimizar.");
+      return;
+    }
+    setAOtimizar(true);
+    try {
+      const resultado = await otimizar({ data: { texto } });
+      if (!resultado.text) {
+        toast.error("A IA não devolveu texto revisto.");
+        return;
+      }
+      setTexto(resultado.text);
+      toast.success("Relatório otimizado. Reveja as alterações.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao otimizar o relatório.");
+    } finally {
+      setAOtimizar(false);
     }
   };
 
@@ -278,7 +312,19 @@ function AppPage() {
               />
 
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button onClick={guardar} className="gap-2">
+                <Button
+                  onClick={otimizarTexto}
+                  className="gap-2"
+                  disabled={aOtimizar || !texto.trim()}
+                >
+                  {aOtimizar ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-4" />
+                  )}
+                  Otimizar Relatório com IA
+                </Button>
+                <Button variant="outline" onClick={guardar} className="gap-2">
                   <Save className="size-4" />
                   Guardar relatório
                 </Button>
