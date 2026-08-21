@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       medicos: {
         Row: {
+          aprendizagem_activa: boolean
           cedula: string | null
           created_at: string
           email: string | null
@@ -24,6 +25,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aprendizagem_activa?: boolean
           cedula?: string | null
           created_at?: string
           email?: string | null
@@ -32,6 +34,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aprendizagem_activa?: boolean
           cedula?: string | null
           created_at?: string
           email?: string | null
@@ -111,6 +114,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      termos_aprendidos: {
+        Row: {
+          activo: boolean
+          correcao_de: string | null
+          created_at: string
+          id: string
+          medico_id: string
+          ocorrencias: number
+          origem: string
+          termo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          correcao_de?: string | null
+          created_at?: string
+          id?: string
+          medico_id: string
+          ocorrencias?: number
+          origem?: string
+          termo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          correcao_de?: string | null
+          created_at?: string
+          id?: string
+          medico_id?: string
+          ocorrencias?: number
+          origem?: string
+          termo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
