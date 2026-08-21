@@ -6,6 +6,7 @@ import { mimeFor, VOCABULARIO, PROMPT_OTIMIZACAO, gatewayError } from "./ai-clin
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
   format: z.enum(["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"]),
+  pistas: z.string().max(1200).optional(),
 });
 
 export const transcribeAudio = createServerFn({ method: "POST" })
