@@ -73,7 +73,25 @@ export const optimizeReport = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-3.7-flash",
         messages: [
-          { role: "system", content: `${PROMPT_OTIMIZACAO}\n\n${VOCABULARIO}` },
+          {
+            role: "system",
+            content: [
+              PROMPT_OTIMIZACAO,
+              VOCABULARIO,
+              data.correccoes?.length
+                ? `Correcções que este médico costuma fazer (aplica-as quando o contexto o justificar): ${data.correccoes
+                    .map((c) => `"${c.de}" → "${c.para}"`)
+                    .join("; ")}.`
+                : "",
+              data.exemplos?.length
+                ? `Exemplos de relatórios anteriores deste médico, apenas como referência de estilo, pontuação e abreviaturas. Não copies conteúdo clínico destes exemplos:\n\n${data.exemplos.join(
+                    "\n\n---\n\n",
+                  )}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+          },
           { role: "user", content: data.texto },
         ],
       }),
