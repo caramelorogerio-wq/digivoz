@@ -68,6 +68,8 @@ function AppPage() {
   const navigate = useNavigate();
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
+  const carregarVocabulario = useServerFn(getVocabularioPessoal);
+  const guardarCorreccoes = useServerFn(registarCorreccoes);
 
   const [aTranscrever, setATranscrever] = useState(false);
   const [aOtimizar, setAOtimizar] = useState(false);
@@ -78,22 +80,51 @@ function AppPage() {
   const [novoPaciente, setNovoPaciente] = useState("");
   const [novoProcesso, setNovoProcesso] = useState("");
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
+  const [contexto, setContexto] = useState<ContextoAprendizagem | null>(null);
+  const [termos, setTermos] = useState<Termo[]>([]);
+  const [novoTermo, setNovoTermo] = useState("");
+  const [aprendizagem, setAprendizagem] = useState(true);
+  const [textoOtimizado, setTextoOtimizado] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
-    const [p, r] = await Promise.all([
+    const [p, r, t, m] = await Promise.all([
       supabase.from("pacientes").select("id, nome, numero_processo").order("nome"),
       supabase
         .from("relatorios_transcritos")
         .select("id, titulo, texto, created_at, paciente_id")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("termos_aprendidos")
+        .select("id, termo, correcao_de, ocorrencias, origem")
+        .eq("activo", true)
+        .order("ocorrencias", { ascending: false }),
+      supabase.auth.getUser(),
     ]);
     if (p.data) setPacientes(p.data);
     if (r.data) setRelatorios(r.data);
+    if (t.data) setTermos(t.data);
+    if (m.data.user) {
+      const perfil = await supabase
+        .from("medicos")
+        .select("aprendizagem_activa")
+        .eq("id", m.data.user.id)
+        .maybeSingle();
+      setAprendizagem(perfil.data?.aprendizagem_activa !== false);
+    }
   }, []);
+
+  const actualizarContexto = useCallback(async () => {
+    try {
+      setContexto(await carregarVocabulario({ data: undefined }));
+    } catch {
+      setContexto(null);
+    }
+  }, [carregarVocabulario]);
 
   useEffect(() => {
     void carregar();
-  }, [carregar]);
+    void actualizarContexto();
+  }, [carregar, actualizarContexto]);
 
   const handleAudio = async (blob: Blob, format: string) => {
     setATranscrever(true);
@@ -103,6 +134,7 @@ function AppPage() {
         data: {
           audioBase64,
           format: format as "wav" | "mp3" | "webm" | "m4a" | "ogg" | "aac" | "flac",
+          ...(contexto?.pistas ? { pistas: contexto.pistas } : {}),
         },
       });
       if (!resultado.text) {

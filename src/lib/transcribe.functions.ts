@@ -6,6 +6,7 @@ import { mimeFor, VOCABULARIO, PROMPT_OTIMIZACAO, gatewayError } from "./ai-clin
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
   format: z.enum(["wav", "mp3", "webm", "m4a", "ogg", "aac", "flac"]),
+  pistas: z.string().max(1200).optional(),
 });
 
 export const transcribeAudio = createServerFn({ method: "POST" })
@@ -23,7 +24,12 @@ export const transcribeAudio = createServerFn({ method: "POST" })
     form.append("model", "openai/gpt-4o-mini-transcribe");
     form.append("file", blob, `gravacao.${data.format}`);
     form.append("language", "pt");
-    form.append("prompt", VOCABULARIO);
+    form.append(
+      "prompt",
+      data.pistas
+        ? `${VOCABULARIO} Termos usados frequentemente por este médico: ${data.pistas}.`
+        : VOCABULARIO,
+    );
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
@@ -40,7 +46,18 @@ export const transcribeAudio = createServerFn({ method: "POST" })
   });
 
 export const optimizeReport = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ texto: z.string().min(1) }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        texto: z.string().min(1),
+        exemplos: z.array(z.string()).max(3).optional(),
+        correccoes: z
+          .array(z.object({ de: z.string(), para: z.string() }))
+          .max(40)
+          .optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
@@ -56,7 +73,25 @@ export const optimizeReport = createServerFn({ method: "POST" })
       body: JSON.stringify({
         model: "google/gemini-3.7-flash",
         messages: [
-          { role: "system", content: `${PROMPT_OTIMIZACAO}\n\n${VOCABULARIO}` },
+          {
+            role: "system",
+            content: [
+              PROMPT_OTIMIZACAO,
+              VOCABULARIO,
+              data.correccoes?.length
+                ? `Correcções que este médico costuma fazer (aplica-as quando o contexto o justificar): ${data.correccoes
+                    .map((c) => `"${c.de}" → "${c.para}"`)
+                    .join("; ")}.`
+                : "",
+              data.exemplos?.length
+                ? `Exemplos de relatórios anteriores deste médico, apenas como referência de estilo, pontuação e abreviaturas. Não copies conteúdo clínico destes exemplos:\n\n${data.exemplos.join(
+                    "\n\n---\n\n",
+                  )}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+          },
           { role: "user", content: data.texto },
         ],
       }),
