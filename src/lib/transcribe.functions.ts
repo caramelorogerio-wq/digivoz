@@ -46,7 +46,18 @@ export const transcribeAudio = createServerFn({ method: "POST" })
   });
 
 export const optimizeReport = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({ texto: z.string().min(1) }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        texto: z.string().min(1),
+        exemplos: z.array(z.string()).max(3).optional(),
+        correccoes: z
+          .array(z.object({ de: z.string(), para: z.string() }))
+          .max(40)
+          .optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
