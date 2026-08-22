@@ -21,6 +21,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { transcribeAudio, optimizeReport } from "@/lib/transcribe.functions";
+import {
+  getVocabularioPessoal,
+  registarCorreccoes,
+  type ContextoAprendizagem,
+} from "@/lib/learning.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -45,6 +50,13 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 type Paciente = { id: string; nome: string; numero_processo: string | null };
+type Termo = {
+  id: string;
+  termo: string;
+  correcao_de: string | null;
+  ocorrencias: number;
+  origem: string;
+};
 type Relatorio = {
   id: string;
   titulo: string;
@@ -157,12 +169,19 @@ function AppPage() {
     }
     setAOtimizar(true);
     try {
-      const resultado = await otimizar({ data: { texto } });
+      const resultado = await otimizar({
+        data: {
+          texto,
+          ...(contexto?.exemplos?.length ? { exemplos: contexto.exemplos } : {}),
+          ...(contexto?.correccoes?.length ? { correccoes: contexto.correccoes } : {}),
+        },
+      });
       if (!resultado.text) {
         toast.error("A IA não devolveu texto revisto.");
         return;
       }
       setTexto(resultado.text);
+      setTextoOtimizado(resultado.text);
       toast.success("Relatório otimizado. Reveja as alterações.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao otimizar o relatório.");
@@ -214,7 +233,19 @@ function AppPage() {
     }
     toast.success("Relatório guardado na sua conta.");
     setTitulo("");
+
+    // Aprende com as correcções manuais feitas depois da otimização.
+    if (textoOtimizado && textoOtimizado !== texto) {
+      try {
+        await guardarCorreccoes({ data: { antes: textoOtimizado, depois: texto } });
+      } catch {
+        /* aprendizagem é opcional */
+      }
+      setTextoOtimizado(null);
+    }
+
     void carregar();
+    void actualizarContexto();
   };
 
   const apagar = async (id: string) => {
@@ -224,6 +255,52 @@ function AppPage() {
       return;
     }
     setRelatorios((a) => a.filter((r) => r.id !== id));
+  };
+
+  const adicionarTermo = async () => {
+    const valor = novoTermo.trim();
+    if (!valor) return;
+    const { data: sessao } = await supabase.auth.getUser();
+    if (!sessao.user) return;
+    const { data, error } = await supabase
+      .from("termos_aprendidos")
+      .insert({ medico_id: sessao.user.id, termo: valor, origem: "manual" })
+      .select("id, termo, correcao_de, ocorrencias, origem")
+      .single();
+    if (error || !data) {
+      toast.error("Não foi possível guardar o termo.");
+      return;
+    }
+    setTermos((a) => [data, ...a]);
+    setNovoTermo("");
+    void actualizarContexto();
+  };
+
+  const apagarTermo = async (id: string) => {
+    const { error } = await supabase.from("termos_aprendidos").delete().eq("id", id);
+    if (error) {
+      toast.error("Não foi possível apagar o termo.");
+      return;
+    }
+    setTermos((a) => a.filter((t) => t.id !== id));
+    void actualizarContexto();
+  };
+
+  const alternarAprendizagem = async () => {
+    const { data: sessao } = await supabase.auth.getUser();
+    if (!sessao.user) return;
+    const novo = !aprendizagem;
+    const { error } = await supabase
+      .from("medicos")
+      .update({ aprendizagem_activa: novo })
+      .eq("id", sessao.user.id);
+    if (error) {
+      toast.error("Não foi possível alterar a definição.");
+      return;
+    }
+    setAprendizagem(novo);
+    toast.success(novo ? "Aprendizagem activada." : "Aprendizagem desactivada.");
+    void actualizarContexto();
   };
 
   const exportar = () => {
@@ -311,6 +388,66 @@ function AppPage() {
                 <UserPlus className="size-4" />
                 Adicionar doente
               </Button>
+            </section>
+
+            <section className="panel space-y-3 p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Vocabulário aprendido</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Termos e correções recolhidos dos seus relatórios anteriores.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={alternarAprendizagem}>
+                  {aprendizagem ? "Desligar" : "Ligar"}
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  value={novoTermo}
+                  onChange={(e) => setNovoTermo(e.target.value)}
+                  placeholder="Acrescentar termo"
+                />
+                <Button variant="outline" onClick={adicionarTermo}>
+                  Juntar
+                </Button>
+              </div>
+
+              <ul className="max-h-64 space-y-1 overflow-y-auto">
+                {termos.length === 0 && (
+                  <li className="text-sm text-muted-foreground">
+                    Ainda não há termos aprendidos. Serão recolhidos à medida que guardar
+                    relatórios.
+                  </li>
+                )}
+                {termos.map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-1.5 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {t.correcao_de ? (
+                        <>
+                          <span className="text-muted-foreground line-through">{t.correcao_de}</span>{" "}
+                          → <span className="font-medium text-foreground">{t.termo}</span>
+                        </>
+                      ) : (
+                        <span className="font-medium text-foreground">{t.termo}</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{t.ocorrencias}×</span>
+                    <button
+                      type="button"
+                      onClick={() => apagarTermo(t.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Apagar termo"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </section>
           </div>
 
