@@ -389,6 +389,66 @@ function AppPage() {
                 Adicionar doente
               </Button>
             </section>
+
+            <section className="panel space-y-3 p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Vocabulário aprendido</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Termos e correções recolhidos dos seus relatórios anteriores.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={alternarAprendizagem}>
+                  {aprendizagem ? "Desligar" : "Ligar"}
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  value={novoTermo}
+                  onChange={(e) => setNovoTermo(e.target.value)}
+                  placeholder="Acrescentar termo"
+                />
+                <Button variant="outline" onClick={adicionarTermo}>
+                  Juntar
+                </Button>
+              </div>
+
+              <ul className="max-h-64 space-y-1 overflow-y-auto">
+                {termos.length === 0 && (
+                  <li className="text-sm text-muted-foreground">
+                    Ainda não há termos aprendidos. Serão recolhidos à medida que guardar
+                    relatórios.
+                  </li>
+                )}
+                {termos.map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-1.5 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {t.correcao_de ? (
+                        <>
+                          <span className="text-muted-foreground line-through">{t.correcao_de}</span>{" "}
+                          → <span className="font-medium text-foreground">{t.termo}</span>
+                        </>
+                      ) : (
+                        <span className="font-medium text-foreground">{t.termo}</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{t.ocorrencias}×</span>
+                    <button
+                      type="button"
+                      onClick={() => apagarTermo(t.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Apagar termo"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
 
           <div className="space-y-6">
