@@ -50,6 +50,13 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 type Paciente = { id: string; nome: string; numero_processo: string | null };
+type Termo = {
+  id: string;
+  termo: string;
+  correcao_de: string | null;
+  ocorrencias: number;
+  origem: string;
+};
 type Relatorio = {
   id: string;
   titulo: string;
