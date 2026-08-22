@@ -21,6 +21,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { transcribeAudio, optimizeReport } from "@/lib/transcribe.functions";
+import {
+  getVocabularioPessoal,
+  registarCorreccoes,
+  type ContextoAprendizagem,
+} from "@/lib/learning.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app")({
