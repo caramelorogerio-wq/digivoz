@@ -169,12 +169,19 @@ function AppPage() {
     }
     setAOtimizar(true);
     try {
-      const resultado = await otimizar({ data: { texto } });
+      const resultado = await otimizar({
+        data: {
+          texto,
+          ...(contexto?.exemplos?.length ? { exemplos: contexto.exemplos } : {}),
+          ...(contexto?.correccoes?.length ? { correccoes: contexto.correccoes } : {}),
+        },
+      });
       if (!resultado.text) {
         toast.error("A IA não devolveu texto revisto.");
         return;
       }
       setTexto(resultado.text);
+      setTextoOtimizado(resultado.text);
       toast.success("Relatório otimizado. Reveja as alterações.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao otimizar o relatório.");
