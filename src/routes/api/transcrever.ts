@@ -30,25 +30,29 @@ export const Route = createFileRoute("/api/transcrever")({
           return Response.json({ error: "Serviço indisponível." }, { status: 500 });
         }
 
+        // New Supabase API keys (sb_publishable_/sb_secret_) are opaque strings,
+        // not JWT bearer tokens — send them only as apikey, never as Bearer.
+        const isNewKey =
+          publishableKey.startsWith("sb_publishable_") ||
+          publishableKey.startsWith("sb_secret_");
+
         const supabase = createClient(supabaseUrl, publishableKey, {
-          auth: { persistSession: false },
+          auth: { persistSession: false, autoRefreshToken: false },
           global: {
             fetch: (input, init) => {
               const headers = new Headers(init?.headers);
-              if (
-                publishableKey.startsWith("sb_") &&
-                headers.get("Authorization") === `Bearer ${publishableKey}`
-              ) {
+              if (isNewKey && headers.get("Authorization") === `Bearer ${publishableKey}`) {
                 headers.delete("Authorization");
               }
               headers.set("apikey", publishableKey);
               return fetch(input, { ...init, headers });
             },
+            headers: { Authorization: `Bearer ${token}` },
           },
         });
 
-        const { data: userData, error: userError } = await supabase.auth.getUser(token);
-        if (userError || !userData?.user) {
+        const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+        if (claimsError || !claimsData?.claims?.sub) {
           return Response.json({ error: "Sessão inválida." }, { status: 401 });
         }
 
