@@ -583,52 +583,6 @@ function AppPage() {
     );
   };
 
-  const adicionarTermo = async () => {
-    const valor = novoTermo.trim();
-    if (!valor) return;
-    const { data: sessao } = await supabase.auth.getUser();
-    if (!sessao.user) return;
-    const { data, error } = await supabase
-      .from("termos_aprendidos")
-      .insert({ medico_id: sessao.user.id, termo: valor, origem: "manual" })
-      .select("id, termo, correcao_de, ocorrencias, origem")
-      .single();
-    if (error || !data) {
-      toast.error("Não foi possível guardar o termo.");
-      return;
-    }
-    setTermos((a) => [data, ...a]);
-    setNovoTermo("");
-    void actualizarContexto();
-  };
-
-  const apagarTermo = async (id: string) => {
-    const { error } = await supabase.from("termos_aprendidos").delete().eq("id", id);
-    if (error) {
-      toast.error("Não foi possível apagar o termo.");
-      return;
-    }
-    setTermos((a) => a.filter((t) => t.id !== id));
-    void actualizarContexto();
-  };
-
-  const alternarAprendizagem = async () => {
-    const { data: sessao } = await supabase.auth.getUser();
-    if (!sessao.user) return;
-    const novo = !aprendizagem;
-    const { error } = await supabase
-      .from("medicos")
-      .update({ aprendizagem_activa: novo })
-      .eq("id", sessao.user.id);
-    if (error) {
-      toast.error("Não foi possível alterar a definição.");
-      return;
-    }
-    setAprendizagem(novo);
-    toast.success(novo ? "Aprendizagem activada." : "Aprendizagem desactivada.");
-    void actualizarContexto();
-  };
-
   const exportar = () => {
     if (!texto.trim()) {
       toast.error(
