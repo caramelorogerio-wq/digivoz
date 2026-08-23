@@ -71,7 +71,7 @@ export const Route = createFileRoute("/api/transcrever")({
           );
         }
 
-        let bytes: Uint8Array;
+        let bytes: Uint8Array<ArrayBuffer>;
         try {
           bytes = Uint8Array.from(atob(parsed.audioBase64), (c) => c.charCodeAt(0));
         } catch {
