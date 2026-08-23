@@ -171,7 +171,7 @@ function AppPage() {
     }
 
     if (r.data) {
-      setRelatorios(r.data);
+      setRelatorios(r.data as Relatorio[]);
     }
 
     if (t.data) {
