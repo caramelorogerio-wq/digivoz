@@ -79,28 +79,43 @@ export type Database = {
       }
       relatorios_transcritos: {
         Row: {
+          blocos: number
+          codigo_faturacao: string
           created_at: string
+          fragmentos: number
           id: string
+          inclusao: string
           medico_id: string
           paciente_id: string | null
+          seccionado: boolean
           texto: string
           titulo: string
           updated_at: string
         }
         Insert: {
+          blocos?: number
+          codigo_faturacao?: string
           created_at?: string
+          fragmentos?: number
           id?: string
+          inclusao?: string
           medico_id: string
           paciente_id?: string | null
+          seccionado?: boolean
           texto?: string
           titulo?: string
           updated_at?: string
         }
         Update: {
+          blocos?: number
+          codigo_faturacao?: string
           created_at?: string
+          fragmentos?: number
           id?: string
+          inclusao?: string
           medico_id?: string
           paciente_id?: string | null
+          seccionado?: boolean
           texto?: string
           titulo?: string
           updated_at?: string
