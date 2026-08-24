@@ -17,6 +17,20 @@ const formatFromMime = (mime: string) => {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+// Edge/Chromium e Safari suportam contentores diferentes; escolhemos o primeiro
+// que o navegador declare suportar em vez de confiar no predefinido.
+const escolherMimeType = () => {
+  const candidatos = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/mp4",
+  ];
+  if (typeof MediaRecorder === "undefined") return undefined;
+  return candidatos.find((t) => MediaRecorder.isTypeSupported?.(t));
+};
+
 export function RecorderPanel({ disabled, onAudio }: Props) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
