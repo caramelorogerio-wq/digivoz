@@ -17,6 +17,20 @@ const formatFromMime = (mime: string) => {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+// Edge/Chromium e Safari suportam contentores diferentes; escolhemos o primeiro
+// que o navegador declare suportar em vez de confiar no predefinido.
+const escolherMimeType = () => {
+  const candidatos = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/mp4",
+  ];
+  if (typeof MediaRecorder === "undefined") return undefined;
+  return candidatos.find((t) => MediaRecorder.isTypeSupported?.(t));
+};
+
 export function RecorderPanel({ disabled, onAudio }: Props) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -34,25 +48,54 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
 
   const iniciar = async () => {
     setErro(null);
+
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setErro("A gravação exige uma ligação segura (https).");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setErro("Este navegador não suporta gravação de áudio. Use o Edge, Chrome ou Safari actualizado.");
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = escolherMimeType();
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       chunksRef.current = [];
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
+      recorder.onerror = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        setErro("A gravação foi interrompida pelo navegador. Tente novamente.");
+      };
       recorder.onstop = () => {
-        const type = recorder.mimeType || "audio/webm";
+        const type = recorder.mimeType || mimeType || "audio/webm";
         const blob = new Blob(chunksRef.current, { type });
         stream.getTracks().forEach((t) => t.stop());
         if (blob.size > 0) onAudio(blob, formatFromMime(type));
+        else setErro("Não foi captado áudio. Verifique se o microfone correcto está selecionado.");
       };
-      recorder.start();
+      // Fatias periódicas: no Edge o buffer só é entregue no fim sem timeslice.
+      recorder.start(1000);
       recorderRef.current = recorder;
       setSeconds(0);
       setRecording(true);
-    } catch {
-      setErro("Não foi possível aceder ao microfone. Verifique as permissões do navegador.");
+    } catch (e) {
+      const nome = (e as DOMException | undefined)?.name;
+      if (nome === "NotAllowedError" || nome === "SecurityError") {
+        setErro(
+          "O acesso ao microfone foi bloqueado. No Edge, clique no ícone de microfone/cadeado na barra de endereço e permita o microfone para este site (ou abra a app em https://digivoz.lovable.app).",
+        );
+      } else if (nome === "NotFoundError" || nome === "OverconstrainedError") {
+        setErro("Nenhum microfone detectado. Ligue um microfone e tente novamente.");
+      } else if (nome === "NotReadableError") {
+        setErro("O microfone está a ser usado por outra aplicação. Feche-a e tente novamente.");
+      } else {
+        setErro("Não foi possível aceder ao microfone. Verifique as permissões do navegador.");
+      }
     }
   };
 
