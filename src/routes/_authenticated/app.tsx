@@ -8,7 +8,6 @@ import {
   Copy,
   Save,
   LogOut,
-  UserPlus,
   Trash2,
   Sparkles,
   Loader2,
@@ -18,11 +17,10 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { ResumoTecnico } from "@/components/resumo-tecnico";
+import { CampoAnalise } from "@/components/campo-analise";
 import {
   transcribeAudio,
   optimizeReport,
@@ -56,11 +54,6 @@ export const Route = createFileRoute("/_authenticated/app")({
   component: AppPage,
 });
 
-type Paciente = {
-  id: string;
-  nome: string;
-  numero_processo: string | null;
-};
 
 type Relatorio = {
   id: string;
@@ -110,13 +103,7 @@ function AppPage() {
   const [aOtimizar, setAOtimizar] = useState(false);
 
   const [texto, setTexto] = useState("");
-  const [titulo, setTitulo] = useState("");
-
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [pacienteId, setPacienteId] = useState("");
-
-  const [novoPaciente, setNovoPaciente] = useState("");
-  const [novoProcesso, setNovoProcesso] = useState("");
+  const [numeroAnalise, setNumeroAnalise] = useState("");
 
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
@@ -142,12 +129,7 @@ function AppPage() {
     useState<"31057" | "31077">("31057");
 
   const carregar = useCallback(async () => {
-    const [p, r, t, m] = await Promise.all([
-      supabase
-        .from("pacientes")
-        .select("id, nome, numero_processo")
-        .order("nome"),
-
+    const [r, t, m] = await Promise.all([
       supabase
         .from("relatorios_transcritos")
         .select(
@@ -166,9 +148,6 @@ function AppPage() {
       supabase.auth.getUser(),
     ]);
 
-    if (p.data) {
-      setPacientes(p.data);
-    }
 
     if (r.data) {
       setRelatorios(r.data as Relatorio[]);
@@ -399,52 +378,6 @@ function AppPage() {
     }
   };
 
-  const criarPaciente = async () => {
-    if (!novoPaciente.trim()) {
-      return;
-    }
-
-    const { data: sessao } =
-      await supabase.auth.getUser();
-
-    if (!sessao.user) {
-      return;
-    }
-
-    const { data, error } =
-      await supabase
-        .from("pacientes")
-        .insert({
-          medico_id: sessao.user.id,
-          nome: novoPaciente.trim(),
-          numero_processo:
-            novoProcesso.trim() || null,
-        })
-        .select(
-          "id, nome, numero_processo",
-        )
-        .single();
-
-    if (error || !data) {
-      toast.error(
-        "Não foi possível criar o doente.",
-      );
-      return;
-    }
-
-    setPacientes((a) => [
-      ...a,
-      data,
-    ]);
-
-    setPacienteId(data.id);
-    setNovoPaciente("");
-    setNovoProcesso("");
-
-    toast.success(
-      "Doente adicionado.",
-    );
-  };
 
   const guardar = async () => {
     if (!texto.trim()) {
@@ -466,11 +399,10 @@ function AppPage() {
         .from("relatorios_transcritos")
         .insert({
           medico_id: sessao.user.id,
-          paciente_id:
-            pacienteId || null,
+          paciente_id: null,
 
           titulo:
-            titulo.trim() ||
+            numeroAnalise.trim() ||
             `Relatório ${new Date().toLocaleDateString(
               "pt-PT",
             )}`,
@@ -513,7 +445,7 @@ function AppPage() {
       "Relatório guardado na sua conta.",
     );
 
-    setTitulo("");
+    setNumeroAnalise("");
     setTextoOtimizado(null);
 
     await carregar();
@@ -522,11 +454,7 @@ function AppPage() {
 
   const abrirRelatorio = (r: Relatorio) => {
     setTexto(r.texto);
-    setTitulo(r.titulo);
-
-    setPacienteId(
-      r.paciente_id ?? "",
-    );
+    setNumeroAnalise(r.titulo);
 
     setFragmentos(
       r.fragmentos ?? 0,
@@ -583,7 +511,7 @@ function AppPage() {
     );
   };
 
-  const exportar = () => {
+  const exportar = async () => {
     if (!texto.trim()) {
       toast.error(
         "Não há texto para exportar.",
@@ -591,53 +519,41 @@ function AppPage() {
       return;
     }
 
-    const resumo = `
+    try {
+      const { gerarRelatorioDocx } = await import(
+        "@/lib/relatorio-docx"
+      );
 
-RESUMO TÉCNICO
+      const blob = await gerarRelatorioDocx({
+        numeroAnalise: numeroAnalise.trim(),
+        texto: texto.trim(),
+        resumo: {
+          fragmentos,
+          blocos,
+          seccionado,
+          inclusao,
+          codigoFaturacao,
+        },
+      });
 
-N.º de fragmentos: ${fragmentos}
-N.º de blocos: ${blocos}
-Seccionado: ${
-      seccionado
-        ? "Sim"
-        : "Não"
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+
+      a.href = url;
+
+      a.download = `${
+        numeroAnalise.trim() || "relatorio"
+      }.docx`;
+
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(
+        "Não foi possível gerar o documento Word.",
+      );
     }
-Inclusão: ${
-      inclusao === "total"
-        ? "Total"
-        : "Com reserva"
-    }
-Código de faturação: ${codigoFaturacao}
-`;
-
-    const conteudo =
-      `${texto.trim()}\n${resumo}`;
-
-    const blob = new Blob(
-      [conteudo],
-      {
-        type:
-          "text/plain;charset=utf-8",
-      },
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      `${
-        titulo.trim() ||
-        "transcricao"
-      }.txt`;
-
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   const copiar = async () => {
@@ -736,76 +652,10 @@ Código de faturação: ${codigoFaturacao}
               }
             />
 
-            <section className="panel space-y-3 p-6">
-              <h2 className="text-lg font-semibold text-foreground">
-                Doentes
-              </h2>
-
-              <div className="space-y-2">
-                <Label htmlFor="paciente">
-                  Associar a um doente
-                </Label>
-
-                <select
-                  id="paciente"
-                  value={pacienteId}
-                  onChange={(e) =>
-                    setPacienteId(
-                      e.target.value,
-                    )
-                  }
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">
-                    Sem doente associado
-                  </option>
-
-                  {pacientes.map((p) => (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                    >
-                      {p.nome}
-
-                      {p.numero_processo
-                        ? ` · ${p.numero_processo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  value={novoPaciente}
-                  onChange={(e) =>
-                    setNovoPaciente(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Nome do novo doente"
-                />
-
-                <Input
-                  value={novoProcesso}
-                  onChange={(e) =>
-                    setNovoProcesso(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="N.º de processo"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={criarPaciente}
-              >
-                <UserPlus className="size-4" />
-                Adicionar doente
-              </Button>
-            </section>
+            <CampoAnalise
+              valor={numeroAnalise}
+              onChange={setNumeroAnalise}
+            />
 
             {/* VOCABULÁRIO APRENDIDO */}
 
@@ -927,22 +777,6 @@ Código de faturação: ${codigoFaturacao}
                 </span>
               </div>
 
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="titulo">
-                  Título do relatório
-                </Label>
-
-                <Input
-                  id="titulo"
-                  value={titulo}
-                  onChange={(e) =>
-                    setTitulo(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Ex.: Biópsia dorso — 19/08"
-                />
-              </div>
 
               <Textarea
                 value={texto}
@@ -988,7 +822,7 @@ Código de faturação: ${codigoFaturacao}
                   onClick={exportar}
                 >
                   <FileDown className="size-4" />
-                  Exportar .txt
+                  Exportar Word (.docx)
                 </Button>
 
                 <Button
