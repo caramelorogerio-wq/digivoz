@@ -28,11 +28,12 @@ O botão "Exportar como texto (.txt)" passa a **"Exportar como Word (.docx)"**:
 
 - Ao guardar, o relatório fica com o título = n.º da análise. Sem número, usa-se a data como antes.
 - Ao abrir um relatório guardado, o campo é preenchido com o respetivo número.
-- A exportação .txt usa o número da análise como nome do ficheiro.
+- A exportação usa o número da análise como nome do ficheiro.
 
 ## Detalhes técnicos
 
-- Sem câmara e sem novas dependências: leitores USB/Bluetooth funcionam como emulação de teclado.
+- Leitura de código: sem câmara e sem dependências — leitores USB/Bluetooth funcionam como emulação de teclado.
+- Word: adicionar a biblioteca `docx` e gerar o ficheiro no browser (`Packer.toBlob`), sem backend; o botão "Copiar" mantém-se.
 - Novo componente `src/components/campo-analise.tsx`: `Input` com `ref`, `autoFocus`, `onKeyDown` a intercetar `Enter` (com `preventDefault` para não submeter nada) e normalização do valor (`trim`, remover caracteres de controlo).
 - Em `src/routes/_authenticated/app.tsx`:
   - remover estados e UI de `pacientes`, `pacienteId`, `novoPaciente`, `novoProcesso`, `criarPaciente` e a query a `pacientes`;
