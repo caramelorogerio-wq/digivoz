@@ -1,29 +1,32 @@
-# Quadro de introdução: número da análise + leitura de código
+# Quadro de introdução: número da análise por leitor de código de barras
 
 ## O que muda
 
-O painel "Doentes" (seleção de doente, nome, n.º de processo, botão adicionar) é substituído por um painel simples **"Análise"** com:
+O painel "Doentes" (seleção de doente, nome, n.º de processo, botão adicionar) é substituído por um painel simples **"Análise"** com um único campo: **N.º da análise**.
 
-- Um campo único: **N.º da análise**
-- Um botão **"Ler código"** que abre a câmara e lê código de barras ou QR code, preenchendo automaticamente o campo
-- O número lido/escrito passa a ser o **título do relatório** (o campo "Título" separado deixa de ser necessário)
+O campo é preparado para leitor físico de códigos de barras/QR (o leitor comporta-se como teclado):
+
+- O campo fica com foco automático ao abrir a página, pronto a receber a leitura
+- A leitura termina em Enter: o valor é aceite, limpo de espaços/quebras de linha e confirmado com uma notificação
+- Continua a ser possível escrever o número à mão
+- Um botão "Preparar leitura" devolve o foco ao campo depois de se ter clicado noutro sítio
+
+O número passa a ser o **título do relatório** (o campo "Título" separado desaparece).
 
 Tudo o resto — gravação, transcrição, otimização com IA, resumo técnico, vocabulário aprendido, exportação .txt — fica igual.
 
 ## Comportamento
 
-- Ao ler um código, o valor é colocado no campo e mostra-se uma confirmação; a câmara fecha automaticamente.
-- Se o navegador não der acesso à câmara, o campo continua editável manualmente e é mostrada a razão da falha (permissão, sem câmara, contexto não seguro).
 - Ao guardar, o relatório fica com o título = n.º da análise. Sem número, usa-se a data como antes.
-- Na lista de relatórios guardados, o número da análise aparece como título de cada item (já é o caso).
+- Ao abrir um relatório guardado, o campo é preenchido com o respetivo número.
+- A exportação .txt usa o número da análise como nome do ficheiro.
 
 ## Detalhes técnicos
 
-- Adicionar `@zxing/browser` (leitura de QR + códigos de barras 1D via `BrowserMultiFormatReader`), carregado dinamicamente só no cliente para não quebrar o SSR.
-- Novo componente `src/components/leitor-codigo.tsx`: campo de texto + botão que monta um `<video>` num diálogo, faz `decodeFromVideoDevice` com `facingMode: environment`, e para o stream ao fechar/ler.
+- Sem câmara e sem novas dependências: leitores USB/Bluetooth funcionam como emulação de teclado.
+- Novo componente `src/components/campo-analise.tsx`: `Input` com `ref`, `autoFocus`, `onKeyDown` a intercetar `Enter` (com `preventDefault` para não submeter nada) e normalização do valor (`trim`, remover caracteres de controlo).
 - Em `src/routes/_authenticated/app.tsx`:
   - remover estados e UI de `pacientes`, `pacienteId`, `novoPaciente`, `novoProcesso`, `criarPaciente` e a query a `pacientes`;
-  - substituir o estado `titulo` por `numeroAnalise` (usado como `titulo` no insert, `paciente_id` fica sempre `null`);
-  - `abrirRelatorio` passa a preencher `numeroAnalise` a partir do título;
-  - exportação .txt usa o número da análise como nome do ficheiro.
-- Sem alterações à base de dados: as tabelas `pacientes` e a coluna `paciente_id` mantêm-se intactas, apenas deixam de ser usadas nesta interface.
+  - substituir o estado `titulo` por `numeroAnalise` (usado como `titulo` no insert; `paciente_id` fica sempre `null`);
+  - `abrirRelatorio` preenche `numeroAnalise` a partir do título.
+- Sem alterações à base de dados: a tabela `pacientes` e a coluna `paciente_id` mantêm-se intactas, apenas deixam de ser usadas nesta interface.
