@@ -88,18 +88,20 @@ const rodapePaginas = (nota: string) =>
           { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
         ],
         children: [
-          new TextRun({ text: nota, size: 18, color: "666666" }),
-          new TextRun({ text: "\tPágina ", size: 18, color: "666666" }),
+          new TextRun({ text: nota, size: 18, color: "666666", font: "Century Gothic" }),
+          new TextRun({ text: "\tPágina ", size: 18, color: "666666", font: "Century Gothic" }),
           new TextRun({
             children: [PageNumber.CURRENT],
             size: 18,
             color: "666666",
+            font: "Century Gothic",
           }),
-          new TextRun({ text: " de ", size: 18, color: "666666" }),
+          new TextRun({ text: " de ", size: 18, color: "666666", font: "Century Gothic" }),
           new TextRun({
             children: [PageNumber.TOTAL_PAGES],
             size: 18,
             color: "666666",
+            font: "Century Gothic",
           }),
         ],
       }),
