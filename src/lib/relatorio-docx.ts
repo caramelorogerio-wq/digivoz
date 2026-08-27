@@ -126,6 +126,7 @@ export async function gerarRelatorioDocx({
     .map(
       (l) =>
         new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
           spacing: { after: 120 },
           children: [new TextRun({ text: l, font: "Century Gothic", size: 20 })],
         }),
