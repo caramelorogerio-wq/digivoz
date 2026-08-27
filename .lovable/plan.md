@@ -1,35 +1,36 @@
-# Sanitizar o nome do ficheiro Word exportado
+# Nome do ficheiro Word exportado perde o n.º da análise
 
-## Problema
+## Causa confirmada
 
-Ao exportar para Word, o nome do ficheiro não fica com o título da análise. O código atual em `src/routes/_authenticated/app.tsx` (linha 587-589) faz:
+Testei o fluxo real no browser (sessão autenticada). Com o n.º da análise preenchido, a exportação gera o nome correto (`C26H0000.docx`). O problema é que a função `guardar` (Guardar relatório) limpa o n.º da análise no fim:
 
 ```js
-a.download = `${numeroAnalise.trim() || "relatorio"}.docx`;
+// src/routes/_authenticated/app.tsx, linha 486 (dentro de guardar)
+setNumeroAnalise("");
 ```
 
-Se o número da análise contiver caracteres inválidos para nomes de ficheiro — o mais comum é `/` (ex.: `24/12345`, típico em números de análises laboratoriais) — o browser interpreta o `/` como separador de caminho e o nome do ficheiro fica truncado ou incorreto.
+Fluxo problemático do médico:
+1. Lê o código de barras → `numeroAnalise = "C26H0000"`
+2. Dita o relatório
+3. Clica em **Guardar** → `guardar()` corre `setNumeroAnalise("")`
+4. Clica em **Exportar Word** → o nome do ficheiro passa a `relatorio.docx` (fallback), porque o número já foi apagado
+
+Notar que `guardar` não limpa o `texto` (só limpa `textoOtimizado` e `numeroAnalise`), pelo que o campo do número fica vazio mas o texto permanece — comportamento inconsistente que origina o bug.
 
 ## Solução
 
-Sanitizar `numeroAnalise` antes de o usar como nome de ficheiro, substituindo os caracteres inválidos (`/ \ : * ? " < > |`) por `_` (sublinhado).
+Manter o n.º da análise depois de guardar, para que a exportação seguinte o use como nome de ficheiro. Remover a linha `setNumeroAnalise("")` de `guardar`.
 
-### Alteração concreta
+### Alteração concreta em `src/routes/_authenticated/app.tsx`
 
-Em `src/routes/_authenticated/app.tsx`, dentro de `exportar`, substituir:
-
-```js
-a.download = `${
-  numeroAnalise.trim() || "relatorio"
-}.docx`;
-```
-
-por:
+Na função `guardar`, remover:
 
 ```js
-const nome = (numeroAnalise.trim() || "relatorio")
-  .replace(/[/\\:*?"<>|]/g, "_");
-a.download = `${nome}.docx`;
+setNumeroAnalise("");
 ```
 
-Não há outras alterações — a UI, os templates, o conteúdo do documento e o restante comportamento mantêm-se idênticos.
+(mantendo `setTextoOtimizado(null)` e o resto).
+
+Assim, depois de guardar, o campo "N.º da análise" mantém-se preenchido e a exportação seguinte gera `C26H0000.docx`. Para iniciar uma nova análise, o médico lê o próximo código de barras (que substitui o valor) ou limpa manualmente — igual a hoje, mas sem perder o número entre guardar e exportar.
+
+Não há outras alterações: UI, templates, conteúdo do documento e restante comportamento mantêm-se.
