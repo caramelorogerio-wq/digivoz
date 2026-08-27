@@ -61,8 +61,8 @@ const linha = (rotulo: string, valor: string) =>
   new Paragraph({
     spacing: { after: 60 },
     children: [
-      new TextRun({ text: `${rotulo}: `, bold: true }),
-      new TextRun(valor),
+      new TextRun({ text: `${rotulo}: `, bold: true, font: "Century Gothic", size: 20 }),
+      new TextRun({ text: valor, font: "Century Gothic", size: 20 }),
     ],
   });
 
