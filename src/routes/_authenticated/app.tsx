@@ -155,9 +155,6 @@ function AppPage() {
       supabase.auth.getUser(),
     ]);
 
-    if (p.data) {
-      setPacientes(p.data);
-    }
 
     if (r.data) {
       setRelatorios(r.data as Relatorio[]);
