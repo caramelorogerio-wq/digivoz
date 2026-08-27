@@ -466,11 +466,10 @@ function AppPage() {
         .from("relatorios_transcritos")
         .insert({
           medico_id: sessao.user.id,
-          paciente_id:
-            pacienteId || null,
+          paciente_id: null,
 
           titulo:
-            titulo.trim() ||
+            numeroAnalise.trim() ||
             `Relatório ${new Date().toLocaleDateString(
               "pt-PT",
             )}`,
