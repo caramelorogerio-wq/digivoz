@@ -38,18 +38,38 @@ export const novaAmostra = (
 });
 
 /**
+ * Converte comandos de voz de aspas em aspas reais.
+ * "abrir aspas lesão do dorso fechar aspas" -> "«lesão do dorso»" (aspas ")
+ */
+export function normalizarAspasDitadas(texto: string): string {
+  const abrir = /\b(?:abrir|abre|abrindo)\s+aspas\b[\s,:;-]*/gi;
+  const fechar = /[\s,]*\b(?:fechar|fecha|fechando)\s+aspas\b/gi;
+
+  return texto
+    .replace(abrir, '"')
+    .replace(fechar, '"')
+    .replace(/"\s+/g, '"')
+    .replace(/\s+"/g, '"')
+    .replace(/"([^"]*)"/g, (_m, dentro: string) => `"${dentro.trim()}"`);
+}
+
+const limparAspas = (valor: string) =>
+  valor.replace(/^["'«»“”\s]+|["'«»“”\s,.:;-]+$/g, "").trim();
+
+/**
  * Separação heurística usada quando a IA não está disponível:
  * procura linhas/frases iniciadas por "amostra ...:" ou "amostra A -".
  */
 export function separarAmostrasHeuristica(
   texto: string,
 ): { titulo: string; texto: string }[] {
-  const limpo = texto.replace(/\r\n/g, "\n").trim();
+  const limpo = normalizarAspasDitadas(texto.replace(/\r\n/g, "\n")).trim();
 
   if (!limpo) return [];
 
   const marcador =
-    /(?:^|\n|\.\s+)\s*amostra\s*(?:n[.º°]?\s*)?([^\n:.\-–]{0,80})\s*[:\-–]\s*/gi;
+    /(?:^|\n|\.\s+)\s*amostra\s*(?:n[.º°]?\s*)?(?:"([^"\n]{1,80})"|([^\n:.\-–]{0,80}))\s*[:\-–]?\s*/gi;
+
 
   const cortes: { indice: number; titulo: string; fim: number }[] = [];
 
