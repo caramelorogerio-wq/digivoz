@@ -136,12 +136,7 @@ function AppPage() {
     useState<"31057" | "31077">("31057");
 
   const carregar = useCallback(async () => {
-    const [p, r, t, m] = await Promise.all([
-      supabase
-        .from("pacientes")
-        .select("id, nome, numero_processo")
-        .order("nome"),
-
+    const [r, t, m] = await Promise.all([
       supabase
         .from("relatorios_transcritos")
         .select(
