@@ -425,6 +425,78 @@ function AppPage() {
     }
   };
 
+  const separarAmostras = async (
+    id: string,
+    conteudo: string,
+    automatico = false,
+  ) => {
+    if (!conteudo.trim()) {
+      if (!automatico) {
+        toast.error("Não há texto para separar.");
+      }
+      return;
+    }
+
+    setASeparar(true);
+
+    try {
+      let blocos: { titulo: string; texto: string }[] = [];
+
+      try {
+        const resultado = await separarIA({
+          data: { texto: conteudo },
+        });
+
+        blocos = resultado.amostras;
+      } catch {
+        blocos = [];
+      }
+
+      if (blocos.length === 0) {
+        blocos = separarAmostrasHeuristica(conteudo);
+      }
+
+      if (blocos.length <= 1) {
+        if (!automatico) {
+          toast.info(
+            "Não foram detetadas várias amostras neste ditado.",
+          );
+        }
+        return;
+      }
+
+      setAmostras((lista) => {
+        const indice = lista.findIndex((a) => a.id === id);
+
+        if (indice < 0) return lista;
+
+        const base = lista[indice]!;
+
+        const novas: Amostra[] = blocos.map((b, i) => ({
+          id: i === 0 ? base.id : `${base.id}-${i}`,
+          titulo: b.titulo || `Amostra ${i + 1}`,
+          texto: b.texto,
+          resumo:
+            i === 0
+              ? base.resumo
+              : { ...resumoVazio() },
+        }));
+
+        return [
+          ...lista.slice(0, indice),
+          ...novas,
+          ...lista.slice(indice + 1),
+        ];
+      });
+
+      toast.success(
+        `${blocos.length} amostras separadas. Reveja os títulos.`,
+      );
+    } finally {
+      setASeparar(false);
+    }
+  };
+
   const otimizarTexto = async () => {
     if (!texto.trim()) {
       toast.error(
@@ -436,27 +508,30 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
-      const resultado = await otimizar({
-        data: {
-          texto,
+      const revistas = await Promise.all(
+        amostras.map(async (a) => {
+          if (!a.texto.trim()) return a;
 
-          exemplos:
-            contexto?.exemplos ?? [],
+          const resultado = await otimizar({
+            data: {
+              texto: a.texto,
 
-          correccoes:
-            contexto?.correccoes ?? [],
-        },
-      });
+              exemplos:
+                contexto?.exemplos ?? [],
 
-      if (!resultado.text) {
-        toast.error(
-          "A IA não devolveu texto revisto.",
-        );
-        return;
-      }
+              correccoes:
+                contexto?.correccoes ?? [],
+            },
+          });
 
-      setTextoOtimizado(resultado.text);
-      setTexto(resultado.text);
+          return resultado.text
+            ? { ...a, texto: resultado.text }
+            : a;
+        }),
+      );
+
+      setTextoOtimizado(textoCompleto(revistas));
+      setAmostras(revistas);
 
       toast.success(
         "Relatório otimizado. Reveja as alterações.",
@@ -471,6 +546,7 @@ function AppPage() {
       setAOtimizar(false);
     }
   };
+
 
 
   const guardar = async () => {
