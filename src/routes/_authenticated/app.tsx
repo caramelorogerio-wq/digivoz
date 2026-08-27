@@ -18,7 +18,16 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { RecorderPanel } from "@/components/recorder-panel";
+import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
+import { BarraComandosVoz } from "@/components/barra-comandos-voz";
+import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
+import {
+  COMANDOS_DESTRUTIVOS,
+  extrairComando,
+  interpretarComando,
+  type Comando,
+} from "@/lib/comandos-voz";
+
 import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
