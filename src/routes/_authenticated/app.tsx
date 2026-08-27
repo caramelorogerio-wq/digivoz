@@ -522,11 +522,7 @@ function AppPage() {
 
   const abrirRelatorio = (r: Relatorio) => {
     setTexto(r.texto);
-    setTitulo(r.titulo);
-
-    setPacienteId(
-      r.paciente_id ?? "",
-    );
+    setNumeroAnalise(r.titulo);
 
     setFragmentos(
       r.fragmentos ?? 0,
