@@ -109,13 +109,20 @@ function AppPage() {
 
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
+  const separarIA = useServerFn(splitSamples);
   const carregarVocabulario = useServerFn(getVocabularioPessoal);
   const guardarCorreccoes = useServerFn(registarCorreccoes);
 
   const [aTranscrever, setATranscrever] = useState(false);
   const [aOtimizar, setAOtimizar] = useState(false);
+  const [aSeparar, setASeparar] = useState(false);
 
-  const [texto, setTexto] = useState("");
+  const [amostras, setAmostras] = useState<Amostra[]>(() => [
+    novaAmostra(),
+  ]);
+
+  const [activaId, setActivaId] = useState<string | null>(null);
+
   const [numeroAnalise, setNumeroAnalise] = useState("");
 
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -130,16 +137,45 @@ function AppPage() {
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
 
-  const [fragmentos, setFragmentos] = useState(0);
-  const [blocos, setBlocos] = useState(0);
+  const amostraActiva =
+    amostras.find((a) => a.id === activaId) ?? amostras[0]!;
 
-  const [seccionado, setSeccionado] = useState(false);
+  const texto = textoCompleto(amostras);
 
-  const [inclusao, setInclusao] =
-    useState<"total" | "reserva">("total");
+  const actualizarAmostra = (
+    id: string,
+    patch: Partial<Amostra>,
+  ) =>
+    setAmostras((lista) =>
+      lista.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    );
 
-  const [codigoFaturacao, setCodigoFaturacao] =
-    useState<"31057" | "31077">("31057");
+  const adicionarAmostra = () => {
+    const nova = novaAmostra();
+    setAmostras((lista) => [...lista, nova]);
+    setActivaId(nova.id);
+  };
+
+  const removerAmostra = (id: string) =>
+    setAmostras((lista) =>
+      lista.length === 1
+        ? lista
+        : lista.filter((a) => a.id !== id),
+    );
+
+  const moverAmostra = (id: string, direccao: -1 | 1) =>
+    setAmostras((lista) => {
+      const i = lista.findIndex((a) => a.id === id);
+      const j = i + direccao;
+
+      if (i < 0 || j < 0 || j >= lista.length) return lista;
+
+      const copia = [...lista];
+      const [item] = copia.splice(i, 1);
+      copia.splice(j, 0, item!);
+      return copia;
+    });
+
 
   const [template, setTemplate] =
     useState<TemplateDocx>("clinico");
