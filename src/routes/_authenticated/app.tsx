@@ -578,13 +578,15 @@ function AppPage() {
             )}`,
 
           texto,
-          fragmentos,
-          blocos,
-          seccionado,
-          inclusao,
+          amostras,
+          fragmentos: amostraActiva.resumo.fragmentos,
+          blocos: amostraActiva.resumo.blocos,
+          seccionado: amostraActiva.resumo.seccionado,
+          inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
-            codigoFaturacao,
+            amostraActiva.resumo.codigoFaturacao,
         });
+
 
     if (error) {
       toast.error(
