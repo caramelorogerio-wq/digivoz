@@ -12,6 +12,10 @@ type Props = {
   onSeccionadoChange: (value: boolean) => void;
   onInclusaoChange: (value: "total" | "reserva") => void;
   onCodigoFaturacaoChange: (value: "31057" | "31077") => void;
+  /** Prefixo para tornar os ids únicos quando há vários resumos na página. */
+  idPrefix?: string;
+  /** Versão compacta, para usar dentro do cartão de uma amostra. */
+  compacto?: boolean;
 };
 
 export function ResumoTecnico({
@@ -25,52 +29,64 @@ export function ResumoTecnico({
   onSeccionadoChange,
   onInclusaoChange,
   onCodigoFaturacaoChange,
+  idPrefix = "resumo",
+  compacto = false,
 }: Props) {
+  const id = (campo: string) => `${idPrefix}-${campo}`;
+
   return (
-    <section className="panel space-y-5 p-6">
+    <section
+      className={
+        compacto
+          ? "space-y-4 rounded-md border border-border bg-secondary/40 p-4"
+          : "panel space-y-5 p-6"
+      }
+    >
       <div>
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2
+          className={
+            compacto
+              ? "text-sm font-semibold text-foreground"
+              : "text-lg font-semibold text-foreground"
+          }
+        >
           Resumo técnico
         </h2>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Dados técnicos e de faturação do exame.
-        </p>
+        {!compacto && (
+          <p className="mt-1 text-sm text-muted-foreground">
+            Dados técnicos e de faturação do exame.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="fragmentos">
+          <Label htmlFor={id("fragmentos")}>
             N.º de fragmentos
           </Label>
 
           <Input
-            id="fragmentos"
+            id={id("fragmentos")}
             type="number"
             min="0"
             value={fragmentos}
             onChange={(e) =>
-              onFragmentosChange(
-                Number(e.target.value)
-              )
+              onFragmentosChange(Number(e.target.value))
             }
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="blocos">
-            N.º de blocos
-          </Label>
+          <Label htmlFor={id("blocos")}>N.º de blocos</Label>
 
           <Input
-            id="blocos"
+            id={id("blocos")}
             type="number"
             min="0"
             value={blocos}
             onChange={(e) =>
-              onBlocosChange(
-                Number(e.target.value)
-              )
+              onBlocosChange(Number(e.target.value))
             }
           />
         </div>
@@ -83,10 +99,9 @@ export function ResumoTecnico({
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
+              name={id("seccionado")}
               checked={seccionado}
-              onChange={() =>
-                onSeccionadoChange(true)
-              }
+              onChange={() => onSeccionadoChange(true)}
             />
             Seccionado
           </label>
@@ -94,10 +109,9 @@ export function ResumoTecnico({
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
+              name={id("seccionado")}
               checked={!seccionado}
-              onChange={() =>
-                onSeccionadoChange(false)
-              }
+              onChange={() => onSeccionadoChange(false)}
             />
             Não seccionado
           </label>
@@ -111,10 +125,9 @@ export function ResumoTecnico({
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
+              name={id("inclusao")}
               checked={inclusao === "total"}
-              onChange={() =>
-                onInclusaoChange("total")
-              }
+              onChange={() => onInclusaoChange("total")}
             />
             Total
           </label>
@@ -122,10 +135,9 @@ export function ResumoTecnico({
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
+              name={id("inclusao")}
               checked={inclusao === "reserva"}
-              onChange={() =>
-                onInclusaoChange("reserva")
-              }
+              onChange={() => onInclusaoChange("reserva")}
             />
             Com reserva
           </label>
@@ -133,29 +145,23 @@ export function ResumoTecnico({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="codigo-faturacao">
+        <Label htmlFor={id("codigo-faturacao")}>
           Código de faturação
         </Label>
 
         <select
-          id="codigo-faturacao"
+          id={id("codigo-faturacao")}
           value={codigoFaturacao}
           onChange={(e) =>
             onCodigoFaturacaoChange(
-              e.target.value as
-                | "31057"
-                | "31077"
+              e.target.value as "31057" | "31077",
             )
           }
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
         >
-          <option value="31057">
-            31057
-          </option>
+          <option value="31057">31057</option>
 
-          <option value="31077">
-            31077
-          </option>
+          <option value="31077">31077</option>
         </select>
       </div>
     </section>
