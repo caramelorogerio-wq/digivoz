@@ -776,6 +776,8 @@ function AppPage() {
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
   const [aGravar, setAGravar] = useState(false);
+  void aGravar;
+
   const [pendente, setPendente] = useState<{
     comando: Comando;
     descricao: string;
