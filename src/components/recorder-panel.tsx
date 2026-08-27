@@ -237,4 +237,5 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
       {erro && <p className="text-sm text-destructive">{erro}</p>}
     </div>
   );
-}
+});
+
