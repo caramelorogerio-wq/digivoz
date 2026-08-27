@@ -127,7 +127,7 @@ export async function gerarRelatorioDocx({
       (l) =>
         new Paragraph({
           spacing: { after: 120 },
-          children: [new TextRun(l)],
+          children: [new TextRun({ text: l, font: "Century Gothic", size: 20 })],
         }),
     );
 
