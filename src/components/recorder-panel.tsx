@@ -121,6 +121,18 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
     setRecording(false);
   };
 
+  useImperativeHandle(ref, () => ({
+    iniciar: () => {
+      if (!recording) void iniciar();
+    },
+    parar: () => {
+      if (recording) parar();
+    },
+    aGravar: () => recording,
+  }));
+
+
+
   const escolherFicheiro = (file: File | undefined) => {
     if (!file) return;
     setErro(null);
