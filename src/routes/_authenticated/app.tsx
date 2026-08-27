@@ -399,52 +399,6 @@ function AppPage() {
     }
   };
 
-  const criarPaciente = async () => {
-    if (!novoPaciente.trim()) {
-      return;
-    }
-
-    const { data: sessao } =
-      await supabase.auth.getUser();
-
-    if (!sessao.user) {
-      return;
-    }
-
-    const { data, error } =
-      await supabase
-        .from("pacientes")
-        .insert({
-          medico_id: sessao.user.id,
-          nome: novoPaciente.trim(),
-          numero_processo:
-            novoProcesso.trim() || null,
-        })
-        .select(
-          "id, nome, numero_processo",
-        )
-        .single();
-
-    if (error || !data) {
-      toast.error(
-        "Não foi possível criar o doente.",
-      );
-      return;
-    }
-
-    setPacientes((a) => [
-      ...a,
-      data,
-    ]);
-
-    setPacienteId(data.id);
-    setNovoPaciente("");
-    setNovoProcesso("");
-
-    toast.success(
-      "Doente adicionado.",
-    );
-  };
 
   const guardar = async () => {
     if (!texto.trim()) {
