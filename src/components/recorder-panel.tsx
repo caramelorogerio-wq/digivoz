@@ -1,11 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Mic, Square, Loader2, Upload, FileAudio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   disabled: boolean;
   onAudio: (file: Blob, format: string) => void;
+  /** Notifica o estado da gravação (usado pelos comandos de voz). */
+  onEstadoChange?: (aGravar: boolean) => void;
 };
+
+/** Controlo imperativo usado pelos comandos de voz. */
+export type RecorderHandle = {
+  iniciar: () => void;
+  parar: () => void;
+  aGravar: () => boolean;
+};
+
 
 const formatFromMime = (mime: string) => {
   if (mime.includes("webm")) return "webm";
