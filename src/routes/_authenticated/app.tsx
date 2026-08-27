@@ -483,7 +483,6 @@ function AppPage() {
       "Relatório guardado na sua conta.",
     );
 
-    setNumeroAnalise("");
     setTextoOtimizado(null);
 
     await carregar();
