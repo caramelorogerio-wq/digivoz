@@ -74,12 +74,14 @@ type Relatorio = {
   texto: string;
   created_at: string;
   paciente_id: string | null;
+  amostras: unknown;
   fragmentos: number;
   blocos: number;
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
 };
+
 
 type Termo = {
   id: string;
