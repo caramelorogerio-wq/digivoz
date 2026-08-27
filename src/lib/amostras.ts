@@ -78,7 +78,7 @@ export function separarAmostrasHeuristica(
   while ((m = marcador.exec(limpo)) !== null) {
     cortes.push({
       indice: m.index,
-      titulo: (m[1] ?? "").trim(),
+      titulo: limparAspas(m[1] ?? m[2] ?? ""),
       fim: m.index + m[0].length,
     });
   }
