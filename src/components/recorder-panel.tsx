@@ -1,11 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Mic, Square, Loader2, Upload, FileAudio, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Props = {
   disabled: boolean;
   onAudio: (file: Blob, format: string) => void;
+  /** Notifica o estado da gravação (usado pelos comandos de voz). */
+  onEstadoChange?: (aGravar: boolean) => void;
 };
+
+/** Controlo imperativo usado pelos comandos de voz. */
+export type RecorderHandle = {
+  iniciar: () => void;
+  parar: () => void;
+  aGravar: () => boolean;
+};
+
 
 const formatFromMime = (mime: string) => {
   if (mime.includes("webm")) return "webm";
@@ -31,7 +41,8 @@ const escolherMimeType = () => {
   return candidatos.find((t) => MediaRecorder.isTypeSupported?.(t));
 };
 
-export function RecorderPanel({ disabled, onAudio }: Props) {
+export const RecorderPanel = forwardRef<RecorderHandle, Props>(
+  function RecorderPanel({ disabled, onAudio, onEstadoChange }, ref) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -41,10 +52,15 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    onEstadoChange?.(recording);
+  }, [recording, onEstadoChange]);
+
+  useEffect(() => {
     if (!recording) return;
     const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(id);
   }, [recording]);
+
 
   const iniciar = async () => {
     setErro(null);
@@ -104,6 +120,18 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
     recorderRef.current = null;
     setRecording(false);
   };
+
+  useImperativeHandle(ref, () => ({
+    iniciar: () => {
+      if (!recording) void iniciar();
+    },
+    parar: () => {
+      if (recording) parar();
+    },
+    aGravar: () => recording,
+  }));
+
+
 
   const escolherFicheiro = (file: File | undefined) => {
     if (!file) return;
@@ -209,4 +237,5 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
       {erro && <p className="text-sm text-destructive">{erro}</p>}
     </div>
   );
-}
+});
+

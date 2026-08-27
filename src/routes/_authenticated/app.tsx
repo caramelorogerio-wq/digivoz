@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Mic,
   FileDown,
@@ -18,7 +18,16 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { RecorderPanel } from "@/components/recorder-panel";
+import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
+import { BarraComandosVoz } from "@/components/barra-comandos-voz";
+import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
+import {
+  COMANDOS_DESTRUTIVOS,
+  extrairComando,
+  interpretarComando,
+  type Comando,
+} from "@/lib/comandos-voz";
+
 import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
@@ -761,7 +770,218 @@ function AppPage() {
     });
   };
 
+  // ---------- COMANDOS POR VOZ ----------
+
+  const recorderRef = useRef<RecorderHandle>(null);
+  const [maosLivres, setMaosLivres] = useState(false);
+  const [ajudaVoz, setAjudaVoz] = useState(false);
+  const [aGravar, setAGravar] = useState(false);
+  void aGravar;
+
+  const [pendente, setPendente] = useState<{
+    comando: Comando;
+    descricao: string;
+  } | null>(null);
+
+  const accoesRef = useRef({
+    otimizarTexto,
+    guardar,
+    exportar,
+    copiar,
+    sair,
+    separarAmostras,
+    adicionarAmostra,
+    removerAmostra,
+    actualizarAmostra,
+    setNumeroAnalise,
+    setAmostras,
+    setActivaId,
+    amostras,
+    amostraActiva,
+  });
+  accoesRef.current = {
+    otimizarTexto,
+    guardar,
+    exportar,
+    copiar,
+    sair,
+    separarAmostras,
+    adicionarAmostra,
+    removerAmostra,
+    actualizarAmostra,
+    setNumeroAnalise,
+    setAmostras,
+    setActivaId,
+    amostras,
+    amostraActiva,
+  };
+
+  const descreverComando = (c: Comando) => {
+    switch (c.tipo) {
+      case "apagar-amostra":
+        return "Apagar a amostra activa";
+      case "novo-relatorio":
+        return "Limpar o relatório actual";
+      case "sair":
+        return "Terminar sessão";
+      default:
+        return "Confirmar acção";
+    }
+  };
+
+  const executar = useCallback((c: Comando) => {
+    const a = accoesRef.current;
+
+    switch (c.tipo) {
+      case "analise":
+        a.setNumeroAnalise(c.valor);
+        toast.success(`N.º da análise: ${c.valor}`);
+        break;
+
+      case "iniciar-gravacao":
+        recorderRef.current?.iniciar();
+        toast.success("A gravar…");
+        break;
+
+      case "parar-gravacao":
+        recorderRef.current?.parar();
+        toast.success("Gravação terminada.");
+        break;
+
+      case "nova-amostra":
+        a.adicionarAmostra();
+        toast.success("Nova amostra criada.");
+        break;
+
+      case "ir-amostra": {
+        const alvo = a.amostras[c.indice - 1];
+        if (!alvo) {
+          toast.error(`Não existe a amostra ${c.indice}.`);
+          break;
+        }
+        a.setActivaId(alvo.id);
+        toast.success(`Amostra ${c.indice} activa.`);
+        break;
+      }
+
+      case "apagar-amostra":
+        a.removerAmostra(a.amostraActiva.id);
+        toast.success("Amostra removida.");
+        break;
+
+      case "resumo":
+        a.actualizarAmostra(a.amostraActiva.id, {
+          resumo: { ...a.amostraActiva.resumo, ...c.resumo },
+        });
+        toast.success("Resumo técnico actualizado.");
+        break;
+
+      case "separar":
+        void a.separarAmostras(
+          a.amostraActiva.id,
+          a.amostraActiva.texto,
+        );
+        break;
+
+      case "otimizar":
+        void a.otimizarTexto();
+        break;
+
+      case "guardar":
+        void a.guardar();
+        break;
+
+      case "exportar":
+        void a.exportar();
+        break;
+
+      case "copiar":
+        void a.copiar();
+        break;
+
+      case "novo-relatorio": {
+        const nova = novaAmostra();
+        a.setAmostras([nova]);
+        a.setActivaId(nova.id);
+        a.setNumeroAnalise("");
+        toast.success("Relatório limpo.");
+        break;
+      }
+
+      case "sair":
+        void a.sair();
+        break;
+
+      default:
+        break;
+    }
+  }, []);
+
+  const tratarFrase = useCallback(
+    ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
+      if (!isFinal) return;
+
+      const corpo = extrairComando(transcript);
+      if (corpo === null) return; // ditado normal
+
+      const comando = interpretarComando(corpo);
+      if (!comando) {
+        toast.error(`Comando não reconhecido: "${corpo}"`);
+        return;
+      }
+
+      if (comando.tipo === "ajuda") {
+        setAjudaVoz(true);
+        return;
+      }
+
+      if (comando.tipo === "cancelar") {
+        setPendente(null);
+        toast.info("Acção cancelada.");
+        return;
+      }
+
+      if (comando.tipo === "confirmar") {
+        setPendente((p) => {
+          if (!p) {
+            toast.error("Não há nenhuma acção por confirmar.");
+            return null;
+          }
+          executar(p.comando);
+          return null;
+        });
+        return;
+      }
+
+      if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
+        setPendente({
+          comando,
+          descricao: descreverComando(comando),
+        });
+        toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
+        return;
+      }
+
+      executar(comando);
+    },
+    [executar],
+  );
+
+  const {
+    suportado: vozSuportada,
+    aEscutar,
+    ultima,
+  } = useReconhecimentoVoz({
+    activo: maosLivres,
+    onFrase: tratarFrase,
+    onErro: (m) => {
+      toast.error(m);
+      setMaosLivres(false);
+    },
+  });
+
   const palavras = contarPalavras(texto);
+
 
 
   return (
@@ -801,10 +1021,24 @@ function AppPage() {
 
           <div className="space-y-6">
 
+            <BarraComandosVoz
+              activo={maosLivres}
+              suportado={vozSuportada}
+              aEscutar={aEscutar}
+              ultima={ultima}
+              pendente={pendente?.descricao ?? null}
+              onAlternar={setMaosLivres}
+              ajudaAberta={ajudaVoz}
+              onAjudaChange={setAjudaVoz}
+            />
+
             <RecorderPanel
+              ref={recorderRef}
               disabled={aTranscrever}
               onAudio={handleAudio}
+              onEstadoChange={setAGravar}
             />
+
 
             <Button
               type="button"
