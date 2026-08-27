@@ -110,13 +110,7 @@ function AppPage() {
   const [aOtimizar, setAOtimizar] = useState(false);
 
   const [texto, setTexto] = useState("");
-  const [titulo, setTitulo] = useState("");
-
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [pacienteId, setPacienteId] = useState("");
-
-  const [novoPaciente, setNovoPaciente] = useState("");
-  const [novoProcesso, setNovoProcesso] = useState("");
+  const [numeroAnalise, setNumeroAnalise] = useState("");
 
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
