@@ -703,21 +703,21 @@ function AppPage() {
         "@/lib/relatorio-docx"
       );
 
+      const usaveis = amostras.filter((a) => a.texto.trim());
+
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
-        texto: texto.trim(),
         template,
         instituicao: instituicao.trim() || "DermaVoz",
         servico:
           servico.trim() || "Serviço de Dermatopatologia",
-        resumo: {
-          fragmentos,
-          blocos,
-          seccionado,
-          inclusao,
-          codigoFaturacao,
-        },
+        amostras: usaveis.map((a, i) => ({
+          titulo: a.titulo.trim() || `Amostra ${i + 1}`,
+          texto: a.texto.trim(),
+          resumo: a.resumo,
+        })),
       });
+
 
       const url = URL.createObjectURL(blob);
 
