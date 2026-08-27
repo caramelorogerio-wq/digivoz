@@ -736,76 +736,10 @@ Código de faturação: ${codigoFaturacao}
               }
             />
 
-            <section className="panel space-y-3 p-6">
-              <h2 className="text-lg font-semibold text-foreground">
-                Doentes
-              </h2>
-
-              <div className="space-y-2">
-                <Label htmlFor="paciente">
-                  Associar a um doente
-                </Label>
-
-                <select
-                  id="paciente"
-                  value={pacienteId}
-                  onChange={(e) =>
-                    setPacienteId(
-                      e.target.value,
-                    )
-                  }
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">
-                    Sem doente associado
-                  </option>
-
-                  {pacientes.map((p) => (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                    >
-                      {p.nome}
-
-                      {p.numero_processo
-                        ? ` · ${p.numero_processo}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  value={novoPaciente}
-                  onChange={(e) =>
-                    setNovoPaciente(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Nome do novo doente"
-                />
-
-                <Input
-                  value={novoProcesso}
-                  onChange={(e) =>
-                    setNovoProcesso(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="N.º de processo"
-                />
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={criarPaciente}
-              >
-                <UserPlus className="size-4" />
-                Adicionar doente
-              </Button>
-            </section>
+            <CampoAnalise
+              valor={numeroAnalise}
+              onChange={setNumeroAnalise}
+            />
 
             {/* VOCABULÁRIO APRENDIDO */}
 
