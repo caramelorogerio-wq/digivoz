@@ -339,24 +339,17 @@ export async function gerarRelatorioDocx({
             ],
           }),
 
-          ...paragrafos,
+          ...(varias
+            ? [
+                linha("N.º da análise", titulo),
+                linha("N.º de amostras", String(lista.length)),
+              ]
+            : []),
 
-          new Paragraph({
-            spacing: { before: 360, after: 120 },
-            children: [
-              new TextRun({ text: "Resumo técnico", bold: true, size: 26, font: "Century Gothic" }),
-            ],
-          }),
-
-          linha("N.º da análise", titulo),
-          linha("N.º de fragmentos", String(resumo.fragmentos)),
-          linha("N.º de blocos", String(resumo.blocos)),
-          linha("Seccionado", resumo.seccionado ? "Sim" : "Não"),
-          linha(
-            "Inclusão",
-            resumo.inclusao === "total" ? "Total" : "Com reserva",
+          ...lista.flatMap((amostra, indice) =>
+            corpoAmostra(amostra, indice),
           ),
-          linha("Código de faturação", resumo.codigoFaturacao),
+
         ],
       },
     ],
