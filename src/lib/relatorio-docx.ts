@@ -120,6 +120,8 @@ const rodapePaginas = (nota: string) =>
 
 export async function gerarRelatorioDocx({
   numeroAnalise,
+  amostras,
+
   texto,
   resumo,
   template = "clinico",
