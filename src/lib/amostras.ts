@@ -43,13 +43,20 @@ export const novaAmostra = (
  */
 export function normalizarAspasDitadas(texto: string): string {
   const abrir = /\b(?:abrir|abre|abrindo)\s+aspas\b[\s,:;-]*/gi;
-  const fechar = /[\s,]*\b(?:fechar|fecha|fechando)\s+aspas\b/gi;
+  // "fechar aspas" fecha as aspas e consome um eventual ponto final logo a
+  // seguir, que passa a funcionar como separador com traço ("-") entre o
+  // título e o corpo do texto.
+  const fechar = /[\s,]*\b(?:fechar|fecha|fechando)\s+aspas\b(?:\s*\.)?/gi;
+  /** Marcador temporário para a aspa de fecho ditada (distinta de aspas soltas). */
+  const FECHAR = "\uE000";
 
   return texto
     .replace(abrir, '"')
-    .replace(fechar, '"')
+    .replace(fechar, FECHAR)
     .replace(/"\s+/g, '"')
     .replace(/\s+"/g, '"')
+    .replace(/"([^"]*?)\uE000/g, (_m, dentro: string) => `"${dentro.trim()}" -`)
+    .replace(/\uE000/g, '"')
     .replace(/"([^"]*)"/g, (_m, dentro: string) => `"${dentro.trim()}"`);
 }
 
