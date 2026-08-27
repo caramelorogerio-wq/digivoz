@@ -927,22 +927,6 @@ Código de faturação: ${codigoFaturacao}
                 </span>
               </div>
 
-              <div className="mt-4 space-y-2">
-                <Label htmlFor="titulo">
-                  Título do relatório
-                </Label>
-
-                <Input
-                  id="titulo"
-                  value={titulo}
-                  onChange={(e) =>
-                    setTitulo(
-                      e.target.value,
-                    )
-                  }
-                  placeholder="Ex.: Biópsia dorso — 19/08"
-                />
-              </div>
 
               <Textarea
                 value={texto}
