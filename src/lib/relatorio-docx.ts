@@ -47,15 +47,25 @@ export const TEMPLATES: {
   },
 ];
 
-export type RelatorioDocx = {
-  numeroAnalise: string;
+export type AmostraDocx = {
+  titulo: string;
   texto: string;
   resumo: ResumoDocx;
+};
+
+export type RelatorioDocx = {
+  numeroAnalise: string;
+  /** Amostras da análise. Cada uma gera uma secção própria. */
+  amostras?: AmostraDocx[];
+  /** Compatibilidade: relatório de amostra única. */
+  texto?: string;
+  resumo?: ResumoDocx;
   template?: TemplateDocx;
   instituicao?: string;
   servico?: string;
   medico?: string;
 };
+
 
 const linha = (rotulo: string, valor: string) =>
   new Paragraph({
