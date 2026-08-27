@@ -21,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { ResumoTecnico } from "@/components/resumo-tecnico";
 import { CampoAnalise } from "@/components/campo-analise";
+import { ModeloDocumento } from "@/components/modelo-documento";
+import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   transcribeAudio,
   optimizeReport,
