@@ -988,7 +988,7 @@ Código de faturação: ${codigoFaturacao}
                   onClick={exportar}
                 >
                   <FileDown className="size-4" />
-                  Exportar .txt
+                  Exportar Word (.docx)
                 </Button>
 
                 <Button
