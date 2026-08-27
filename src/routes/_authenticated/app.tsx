@@ -396,15 +396,24 @@ function AppPage() {
         return;
       }
 
-      setTexto((atual) =>
-        atual
-          ? `${atual}\n\n${resultado.text}`
+      const alvo = amostraActiva.id;
+
+      actualizarAmostra(alvo, {
+        texto: amostraActiva.texto
+          ? `${amostraActiva.texto}\n\n${resultado.text}`
           : resultado.text,
-      );
+      });
+
+      setActivaId(alvo);
 
       toast.success(
         "Transcrição concluída.",
       );
+
+      if (/\bamostra\b/i.test(resultado.text)) {
+        void separarAmostras(alvo, resultado.text, true);
+      }
+
     } catch (e) {
       toast.error(
         e instanceof Error
