@@ -21,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
 import { ResumoTecnico } from "@/components/resumo-tecnico";
 import { CampoAnalise } from "@/components/campo-analise";
+import { ModeloDocumento } from "@/components/modelo-documento";
+import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   transcribeAudio,
   optimizeReport,
@@ -127,6 +129,42 @@ function AppPage() {
 
   const [codigoFaturacao, setCodigoFaturacao] =
     useState<"31057" | "31077">("31057");
+
+  const [template, setTemplate] =
+    useState<TemplateDocx>("clinico");
+
+  const [instituicao, setInstituicao] = useState("DermaVoz");
+
+  const [servico, setServico] = useState(
+    "Serviço de Dermatopatologia",
+  );
+
+  useEffect(() => {
+    const guardado = localStorage.getItem("dermavoz:modelo-docx");
+
+    if (!guardado) return;
+
+    try {
+      const p = JSON.parse(guardado) as {
+        template?: TemplateDocx;
+        instituicao?: string;
+        servico?: string;
+      };
+
+      if (p.template) setTemplate(p.template);
+      if (p.instituicao) setInstituicao(p.instituicao);
+      if (p.servico) setServico(p.servico);
+    } catch {
+      // preferência inválida: ignora
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "dermavoz:modelo-docx",
+      JSON.stringify({ template, instituicao, servico }),
+    );
+  }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
     const [r, t, m] = await Promise.all([
@@ -527,6 +565,10 @@ function AppPage() {
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
         texto: texto.trim(),
+        template,
+        instituicao: instituicao.trim() || "DermaVoz",
+        servico:
+          servico.trim() || "Serviço de Dermatopatologia",
         resumo: {
           fragmentos,
           blocos,
@@ -655,6 +697,15 @@ function AppPage() {
             <CampoAnalise
               valor={numeroAnalise}
               onChange={setNumeroAnalise}
+            />
+
+            <ModeloDocumento
+              template={template}
+              instituicao={instituicao}
+              servico={servico}
+              onTemplateChange={setTemplate}
+              onInstituicaoChange={setInstituicao}
+              onServicoChange={setServico}
             />
 
             {/* VOCABULÁRIO APRENDIDO */}
