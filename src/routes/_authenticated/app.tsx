@@ -583,7 +583,7 @@ function AppPage() {
     );
   };
 
-  const exportar = () => {
+  const exportar = async () => {
     if (!texto.trim()) {
       toast.error(
         "Não há texto para exportar.",
@@ -591,53 +591,41 @@ function AppPage() {
       return;
     }
 
-    const resumo = `
+    try {
+      const { gerarRelatorioDocx } = await import(
+        "@/lib/relatorio-docx"
+      );
 
-RESUMO TÉCNICO
+      const blob = await gerarRelatorioDocx({
+        numeroAnalise: numeroAnalise.trim(),
+        texto: texto.trim(),
+        resumo: {
+          fragmentos,
+          blocos,
+          seccionado,
+          inclusao,
+          codigoFaturacao,
+        },
+      });
 
-N.º de fragmentos: ${fragmentos}
-N.º de blocos: ${blocos}
-Seccionado: ${
-      seccionado
-        ? "Sim"
-        : "Não"
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+
+      a.href = url;
+
+      a.download = `${
+        numeroAnalise.trim() || "relatorio"
+      }.docx`;
+
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(
+        "Não foi possível gerar o documento Word.",
+      );
     }
-Inclusão: ${
-      inclusao === "total"
-        ? "Total"
-        : "Com reserva"
-    }
-Código de faturação: ${codigoFaturacao}
-`;
-
-    const conteudo =
-      `${texto.trim()}\n${resumo}`;
-
-    const blob = new Blob(
-      [conteudo],
-      {
-        type:
-          "text/plain;charset=utf-8",
-      },
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-      `${
-        titulo.trim() ||
-        "transcricao"
-      }.txt`;
-
-    a.click();
-
-    URL.revokeObjectURL(url);
   };
 
   const copiar = async () => {
