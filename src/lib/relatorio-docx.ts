@@ -206,7 +206,7 @@ export async function gerarRelatorioDocx({
   const doc = new Document({
     styles: {
       default: {
-        document: { run: { font: "Arial", size: 22 } },
+        document: { run: { font: "Century Gothic", size: 20 } },
       },
     },
     sections: [
@@ -233,7 +233,7 @@ export async function gerarRelatorioDocx({
                 : AlignmentType.LEFT,
             spacing: { after: 80 },
             children: [
-              new TextRun({ text: titulo, bold: true, size: 30 }),
+              new TextRun({ text: titulo, bold: true, size: 30, font: "Century Gothic" }),
             ],
           }),
 
@@ -248,6 +248,7 @@ export async function gerarRelatorioDocx({
                 text: `Relatório clínico · ${data}`,
                 color: "666666",
                 size: 20,
+                font: "Century Gothic",
               }),
             ],
           }),
@@ -257,7 +258,7 @@ export async function gerarRelatorioDocx({
           new Paragraph({
             spacing: { before: 360, after: 120 },
             children: [
-              new TextRun({ text: "Resumo técnico", bold: true, size: 26 }),
+              new TextRun({ text: "Resumo técnico", bold: true, size: 26, font: "Century Gothic" }),
             ],
           }),
 
