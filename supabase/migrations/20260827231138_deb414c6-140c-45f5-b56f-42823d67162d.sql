@@ -1,0 +1,1 @@
+ALTER TABLE public.relatorios_transcritos ADD COLUMN IF NOT EXISTS amostras jsonb NOT NULL DEFAULT '[]'::jsonb;

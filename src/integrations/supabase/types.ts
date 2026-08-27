@@ -79,6 +79,7 @@ export type Database = {
       }
       relatorios_transcritos: {
         Row: {
+          amostras: Json
           blocos: number
           codigo_faturacao: string
           created_at: string
@@ -93,6 +94,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          amostras?: Json
           blocos?: number
           codigo_faturacao?: string
           created_at?: string
@@ -107,6 +109,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          amostras?: Json
           blocos?: number
           codigo_faturacao?: string
           created_at?: string
