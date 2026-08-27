@@ -77,7 +77,7 @@ const separador = () =>
         space: 1,
       },
     },
-    children: [new TextRun("")],
+    children: [new TextRun({ text: "", font: "Century Gothic", size: 20 })],
   });
 
 const rodapePaginas = (nota: string) =>
