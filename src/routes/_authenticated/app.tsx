@@ -699,6 +699,15 @@ function AppPage() {
               onChange={setNumeroAnalise}
             />
 
+            <ModeloDocumento
+              template={template}
+              instituicao={instituicao}
+              servico={servico}
+              onTemplateChange={setTemplate}
+              onInstituicaoChange={setInstituicao}
+              onServicoChange={setServico}
+            />
+
             {/* VOCABULÁRIO APRENDIDO */}
 
             <section className="panel space-y-4 p-6">
