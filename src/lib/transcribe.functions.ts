@@ -6,8 +6,10 @@ import {
   mimeFor,
   VOCABULARIO,
   PROMPT_OTIMIZACAO,
+  PROMPT_SEPARACAO,
   gatewayError,
 } from "./ai-clinico";
+
 
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
