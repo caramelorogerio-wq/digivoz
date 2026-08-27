@@ -13,19 +13,29 @@ import {
   Loader2,
   Brain,
   Power,
+  SplitSquareVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
-import { ResumoTecnico } from "@/components/resumo-tecnico";
+import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
+  type Amostra,
+  type ResumoAmostra,
+  novaAmostra,
+  resumoVazio,
+  separarAmostrasHeuristica,
+  textoCompleto,
+  contarPalavras,
+} from "@/lib/amostras";
+import {
   transcribeAudio,
   optimizeReport,
+  splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,6 +43,7 @@ import {
   registarCorreccoes,
   type ContextoAprendizagem,
 } from "@/lib/learning.functions";
+
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
