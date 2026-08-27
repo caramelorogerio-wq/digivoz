@@ -47,15 +47,25 @@ export const TEMPLATES: {
   },
 ];
 
-export type RelatorioDocx = {
-  numeroAnalise: string;
+export type AmostraDocx = {
+  titulo: string;
   texto: string;
   resumo: ResumoDocx;
+};
+
+export type RelatorioDocx = {
+  numeroAnalise: string;
+  /** Amostras da análise. Cada uma gera uma secção própria. */
+  amostras?: AmostraDocx[];
+  /** Compatibilidade: relatório de amostra única. */
+  texto?: string;
+  resumo?: ResumoDocx;
   template?: TemplateDocx;
   instituicao?: string;
   servico?: string;
   medico?: string;
 };
+
 
 const linha = (rotulo: string, valor: string) =>
   new Paragraph({
@@ -110,6 +120,8 @@ const rodapePaginas = (nota: string) =>
 
 export async function gerarRelatorioDocx({
   numeroAnalise,
+  amostras,
+
   texto,
   resumo,
   template = "clinico",
@@ -120,17 +132,92 @@ export async function gerarRelatorioDocx({
   const titulo = numeroAnalise || "Relatório";
   const data = new Date().toLocaleDateString("pt-PT");
 
-  const paragrafos = texto
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .map(
-      (l) =>
+  const lista: AmostraDocx[] =
+    amostras && amostras.length > 0
+      ? amostras
+      : [
+          {
+            titulo: "",
+            texto: texto ?? "",
+            resumo: resumo ?? {
+              fragmentos: 0,
+              blocos: 0,
+              seccionado: false,
+              inclusao: "total",
+              codigoFaturacao: "31057",
+            },
+          },
+        ];
+
+  const varias = lista.length > 1;
+
+  const corpoAmostra = (
+    amostra: AmostraDocx,
+    indice: number,
+  ): Paragraph[] => {
+    const paragrafos: Paragraph[] = [];
+
+    if (varias || amostra.titulo.trim()) {
+      paragrafos.push(
         new Paragraph({
-          alignment: AlignmentType.JUSTIFIED,
-          spacing: { after: 120 },
-          children: [new TextRun({ text: l, font: "Century Gothic", size: 20 })],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: indice === 0 ? 120 : 360, after: 120 },
+          children: [
+            new TextRun({
+              text:
+                amostra.titulo.trim() || `Amostra ${indice + 1}`,
+              bold: true,
+              size: 24,
+              color: "1F4E79",
+              font: "Century Gothic",
+            }),
+          ],
         }),
+      );
+    }
+
+    paragrafos.push(
+      ...amostra.texto
+        .replace(/\r\n/g, "\n")
+        .split("\n")
+        .map(
+          (l) =>
+            new Paragraph({
+              alignment: AlignmentType.JUSTIFIED,
+              spacing: { after: 120 },
+              children: [
+                new TextRun({ text: l, font: "Century Gothic", size: 20 }),
+              ],
+            }),
+        ),
     );
+
+    paragrafos.push(
+      new Paragraph({
+        spacing: { before: 240, after: 120 },
+        children: [
+          new TextRun({
+            text: varias ? "Resumo técnico da amostra" : "Resumo técnico",
+            bold: true,
+            size: varias ? 22 : 26,
+            font: "Century Gothic",
+          }),
+        ],
+      }),
+      ...(varias ? [] : [linha("N.º da análise", titulo)]),
+      linha("N.º de fragmentos", String(amostra.resumo.fragmentos)),
+      linha("N.º de blocos", String(amostra.resumo.blocos)),
+      linha("Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"),
+      linha(
+        "Inclusão",
+        amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
+      ),
+      linha("Código de faturação", amostra.resumo.codigoFaturacao),
+    );
+
+    return paragrafos;
+  };
+
 
   const cabecalhoClinico = new Header({
     children: [
@@ -254,24 +341,17 @@ export async function gerarRelatorioDocx({
             ],
           }),
 
-          ...paragrafos,
+          ...(varias
+            ? [
+                linha("N.º da análise", titulo),
+                linha("N.º de amostras", String(lista.length)),
+              ]
+            : []),
 
-          new Paragraph({
-            spacing: { before: 360, after: 120 },
-            children: [
-              new TextRun({ text: "Resumo técnico", bold: true, size: 26, font: "Century Gothic" }),
-            ],
-          }),
-
-          linha("N.º da análise", titulo),
-          linha("N.º de fragmentos", String(resumo.fragmentos)),
-          linha("N.º de blocos", String(resumo.blocos)),
-          linha("Seccionado", resumo.seccionado ? "Sim" : "Não"),
-          linha(
-            "Inclusão",
-            resumo.inclusao === "total" ? "Total" : "Com reserva",
+          ...lista.flatMap((amostra, indice) =>
+            corpoAmostra(amostra, indice),
           ),
-          linha("Código de faturação", resumo.codigoFaturacao),
+
         ],
       },
     ],

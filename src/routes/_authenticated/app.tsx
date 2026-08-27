@@ -13,19 +13,29 @@ import {
   Loader2,
   Brain,
   Power,
+  SplitSquareVertical,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { RecorderPanel } from "@/components/recorder-panel";
-import { ResumoTecnico } from "@/components/resumo-tecnico";
+import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
+  type Amostra,
+  type ResumoAmostra,
+  novaAmostra,
+  resumoVazio,
+  separarAmostrasHeuristica,
+  textoCompleto,
+  contarPalavras,
+} from "@/lib/amostras";
+import {
   transcribeAudio,
   optimizeReport,
+  splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,6 +43,7 @@ import {
   registarCorreccoes,
   type ContextoAprendizagem,
 } from "@/lib/learning.functions";
+
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({
@@ -63,12 +74,14 @@ type Relatorio = {
   texto: string;
   created_at: string;
   paciente_id: string | null;
+  amostras: unknown;
   fragmentos: number;
   blocos: number;
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
 };
+
 
 type Termo = {
   id: string;
@@ -98,13 +111,20 @@ function AppPage() {
 
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
+  const separarIA = useServerFn(splitSamples);
   const carregarVocabulario = useServerFn(getVocabularioPessoal);
   const guardarCorreccoes = useServerFn(registarCorreccoes);
 
   const [aTranscrever, setATranscrever] = useState(false);
   const [aOtimizar, setAOtimizar] = useState(false);
+  const [aSeparar, setASeparar] = useState(false);
 
-  const [texto, setTexto] = useState("");
+  const [amostras, setAmostras] = useState<Amostra[]>(() => [
+    novaAmostra(),
+  ]);
+
+  const [activaId, setActivaId] = useState<string | null>(null);
+
   const [numeroAnalise, setNumeroAnalise] = useState("");
 
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -119,16 +139,45 @@ function AppPage() {
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
 
-  const [fragmentos, setFragmentos] = useState(0);
-  const [blocos, setBlocos] = useState(0);
+  const amostraActiva =
+    amostras.find((a) => a.id === activaId) ?? amostras[0]!;
 
-  const [seccionado, setSeccionado] = useState(false);
+  const texto = textoCompleto(amostras);
 
-  const [inclusao, setInclusao] =
-    useState<"total" | "reserva">("total");
+  const actualizarAmostra = (
+    id: string,
+    patch: Partial<Amostra>,
+  ) =>
+    setAmostras((lista) =>
+      lista.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    );
 
-  const [codigoFaturacao, setCodigoFaturacao] =
-    useState<"31057" | "31077">("31057");
+  const adicionarAmostra = () => {
+    const nova = novaAmostra();
+    setAmostras((lista) => [...lista, nova]);
+    setActivaId(nova.id);
+  };
+
+  const removerAmostra = (id: string) =>
+    setAmostras((lista) =>
+      lista.length === 1
+        ? lista
+        : lista.filter((a) => a.id !== id),
+    );
+
+  const moverAmostra = (id: string, direccao: -1 | 1) =>
+    setAmostras((lista) => {
+      const i = lista.findIndex((a) => a.id === id);
+      const j = i + direccao;
+
+      if (i < 0 || j < 0 || j >= lista.length) return lista;
+
+      const copia = [...lista];
+      const [item] = copia.splice(i, 1);
+      copia.splice(j, 0, item!);
+      return copia;
+    });
+
 
   const [template, setTemplate] =
     useState<TemplateDocx>("clinico");
@@ -349,15 +398,24 @@ function AppPage() {
         return;
       }
 
-      setTexto((atual) =>
-        atual
-          ? `${atual}\n\n${resultado.text}`
+      const alvo = amostraActiva.id;
+
+      actualizarAmostra(alvo, {
+        texto: amostraActiva.texto
+          ? `${amostraActiva.texto}\n\n${resultado.text}`
           : resultado.text,
-      );
+      });
+
+      setActivaId(alvo);
 
       toast.success(
         "Transcrição concluída.",
       );
+
+      if (/\bamostra\b/i.test(resultado.text)) {
+        void separarAmostras(alvo, resultado.text, true);
+      }
+
     } catch (e) {
       toast.error(
         e instanceof Error
@@ -366,6 +424,78 @@ function AppPage() {
       );
     } finally {
       setATranscrever(false);
+    }
+  };
+
+  const separarAmostras = async (
+    id: string,
+    conteudo: string,
+    automatico = false,
+  ) => {
+    if (!conteudo.trim()) {
+      if (!automatico) {
+        toast.error("Não há texto para separar.");
+      }
+      return;
+    }
+
+    setASeparar(true);
+
+    try {
+      let blocos: { titulo: string; texto: string }[] = [];
+
+      try {
+        const resultado = await separarIA({
+          data: { texto: conteudo },
+        });
+
+        blocos = resultado.amostras;
+      } catch {
+        blocos = [];
+      }
+
+      if (blocos.length === 0) {
+        blocos = separarAmostrasHeuristica(conteudo);
+      }
+
+      if (blocos.length <= 1) {
+        if (!automatico) {
+          toast.info(
+            "Não foram detetadas várias amostras neste ditado.",
+          );
+        }
+        return;
+      }
+
+      setAmostras((lista) => {
+        const indice = lista.findIndex((a) => a.id === id);
+
+        if (indice < 0) return lista;
+
+        const base = lista[indice]!;
+
+        const novas: Amostra[] = blocos.map((b, i) => ({
+          id: i === 0 ? base.id : `${base.id}-${i}`,
+          titulo: b.titulo || `Amostra ${i + 1}`,
+          texto: b.texto,
+          resumo:
+            i === 0
+              ? base.resumo
+              : { ...resumoVazio() },
+        }));
+
+        return [
+          ...lista.slice(0, indice),
+          ...novas,
+          ...lista.slice(indice + 1),
+        ];
+      });
+
+      toast.success(
+        `${blocos.length} amostras separadas. Reveja os títulos.`,
+      );
+    } finally {
+      setASeparar(false);
     }
   };
 
@@ -380,27 +510,30 @@ function AppPage() {
     setAOtimizar(true);
 
     try {
-      const resultado = await otimizar({
-        data: {
-          texto,
+      const revistas = await Promise.all(
+        amostras.map(async (a) => {
+          if (!a.texto.trim()) return a;
 
-          exemplos:
-            contexto?.exemplos ?? [],
+          const resultado = await otimizar({
+            data: {
+              texto: a.texto,
 
-          correccoes:
-            contexto?.correccoes ?? [],
-        },
-      });
+              exemplos:
+                contexto?.exemplos ?? [],
 
-      if (!resultado.text) {
-        toast.error(
-          "A IA não devolveu texto revisto.",
-        );
-        return;
-      }
+              correccoes:
+                contexto?.correccoes ?? [],
+            },
+          });
 
-      setTextoOtimizado(resultado.text);
-      setTexto(resultado.text);
+          return resultado.text
+            ? { ...a, texto: resultado.text }
+            : a;
+        }),
+      );
+
+      setTextoOtimizado(textoCompleto(revistas));
+      setAmostras(revistas);
 
       toast.success(
         "Relatório otimizado. Reveja as alterações.",
@@ -415,6 +548,7 @@ function AppPage() {
       setAOtimizar(false);
     }
   };
+
 
 
   const guardar = async () => {
@@ -446,13 +580,15 @@ function AppPage() {
             )}`,
 
           texto,
-          fragmentos,
-          blocos,
-          seccionado,
-          inclusao,
+          amostras,
+          fragmentos: amostraActiva.resumo.fragmentos,
+          blocos: amostraActiva.resumo.blocos,
+          seccionado: amostraActiva.resumo.seccionado,
+          inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
-            codigoFaturacao,
+            amostraActiva.resumo.codigoFaturacao,
         });
+
 
     if (error) {
       toast.error(
@@ -490,28 +626,34 @@ function AppPage() {
   };
 
   const abrirRelatorio = (r: Relatorio) => {
-    setTexto(r.texto);
+    const guardadas = Array.isArray(r.amostras)
+      ? (r.amostras as Amostra[]).filter(
+          (a) => a && typeof a.texto === "string",
+        )
+      : [];
+
+    const lista: Amostra[] =
+      guardadas.length > 0
+        ? guardadas.map((a) => ({
+            id: a.id || novaAmostra().id,
+            titulo: a.titulo ?? "",
+            texto: a.texto ?? "",
+            resumo: { ...resumoVazio(), ...(a.resumo ?? {}) },
+          }))
+        : [
+            novaAmostra("", r.texto, {
+              fragmentos: r.fragmentos ?? 0,
+              blocos: r.blocos ?? 0,
+              seccionado: r.seccionado ?? false,
+              inclusao: r.inclusao ?? "total",
+              codigoFaturacao: r.codigo_faturacao ?? "31057",
+            }),
+          ];
+
+    setAmostras(lista);
+    setActivaId(lista[0]!.id);
     setNumeroAnalise(r.titulo);
 
-    setFragmentos(
-      r.fragmentos ?? 0,
-    );
-
-    setBlocos(
-      r.blocos ?? 0,
-    );
-
-    setSeccionado(
-      r.seccionado ?? false,
-    );
-
-    setInclusao(
-      r.inclusao ?? "total",
-    );
-
-    setCodigoFaturacao(
-      r.codigo_faturacao ?? "31057",
-    );
 
     setTextoOtimizado(null);
 
@@ -561,21 +703,21 @@ function AppPage() {
         "@/lib/relatorio-docx"
       );
 
+      const usaveis = amostras.filter((a) => a.texto.trim());
+
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
-        texto: texto.trim(),
         template,
         instituicao: instituicao.trim() || "DermaVoz",
         servico:
           servico.trim() || "Serviço de Dermatopatologia",
-        resumo: {
-          fragmentos,
-          blocos,
-          seccionado,
-          inclusao,
-          codigoFaturacao,
-        },
+        amostras: usaveis.map((a, i) => ({
+          titulo: a.titulo.trim() || `Amostra ${i + 1}`,
+          texto: a.texto.trim(),
+          resumo: a.resumo,
+        })),
       });
+
 
       const url = URL.createObjectURL(blob);
 
@@ -619,12 +761,8 @@ function AppPage() {
     });
   };
 
-  const palavras = texto.trim()
-    ? texto
-        .trim()
-        .split(/\s+/)
-        .length
-    : 0;
+  const palavras = contarPalavras(texto);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -668,30 +806,26 @@ function AppPage() {
               onAudio={handleAudio}
             />
 
-            <ResumoTecnico
-              fragmentos={fragmentos}
-              blocos={blocos}
-              seccionado={seccionado}
-              inclusao={inclusao}
-              codigoFaturacao={
-                codigoFaturacao
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={aSeparar || !amostraActiva.texto.trim()}
+              onClick={() =>
+                separarAmostras(
+                  amostraActiva.id,
+                  amostraActiva.texto,
+                )
               }
-              onFragmentosChange={
-                setFragmentos
-              }
-              onBlocosChange={
-                setBlocos
-              }
-              onSeccionadoChange={
-                setSeccionado
-              }
-              onInclusaoChange={
-                setInclusao
-              }
-              onCodigoFaturacaoChange={
-                setCodigoFaturacao
-              }
-            />
+            >
+              {aSeparar ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <SplitSquareVertical className="size-4" />
+              )}
+              Separar amostras do ditado
+            </Button>
+
 
             <CampoAnalise
               valor={numeroAnalise}
@@ -810,15 +944,16 @@ function AppPage() {
 
           <div className="space-y-6">
 
-            <section className="panel flex flex-col p-6">
+            <section className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
-                    Texto transcrito
+                    Amostras da análise
                   </h2>
 
                   <p className="text-sm text-muted-foreground">
-                    Reveja e corrija antes de guardar ou exportar.
+                    Dite tudo seguido dizendo &quot;amostra&quot; antes de cada
+                    uma, ou edite cada bloco aqui.
                   </p>
                 </div>
 
@@ -827,19 +962,25 @@ function AppPage() {
                 </span>
               </div>
 
-
-              <Textarea
-                value={texto}
-                onChange={(e) =>
-                  setTexto(
-                    e.target.value,
-                  )
+              <ListaAmostras
+                amostras={amostras}
+                activaId={amostraActiva.id}
+                onActivar={setActivaId}
+                onTituloChange={(id, titulo) =>
+                  actualizarAmostra(id, { titulo })
                 }
-                placeholder="O texto transcrito aparecerá aqui."
-                className="mt-4 min-h-[360px] flex-1 resize-none text-sm leading-relaxed"
+                onTextoChange={(id, t) =>
+                  actualizarAmostra(id, { texto: t })
+                }
+                onResumoChange={(id, resumo) =>
+                  actualizarAmostra(id, { resumo })
+                }
+                onAdicionar={adicionarAmostra}
+                onRemover={removerAmostra}
+                onMover={moverAmostra}
               />
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={otimizarTexto}
                   className="gap-2"
@@ -888,9 +1029,11 @@ function AppPage() {
                 <Button
                   variant="outline"
                   className="gap-2"
-                  onClick={() =>
-                    setTexto("")
-                  }
+                  onClick={() => {
+                    const nova = novaAmostra();
+                    setAmostras([nova]);
+                    setActivaId(nova.id);
+                  }}
                   disabled={!texto}
                 >
                   <Eraser className="size-4" />
@@ -898,6 +1041,7 @@ function AppPage() {
                 </Button>
               </div>
             </section>
+
 
             <section className="panel p-6">
               <h2 className="text-lg font-semibold text-foreground">

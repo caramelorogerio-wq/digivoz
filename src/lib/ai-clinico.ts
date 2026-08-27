@@ -16,7 +16,11 @@ export const VOCABULARIO =
 export const PROMPT_OTIMIZACAO =
   "És um revisor de relatórios de dermatopatologia em Portugal. Recebes uma transcrição bruta de ditado e devolves o mesmo conteúdo corrigido: pontuação e maiúsculas correctas, parágrafos legíveis, correcção de erros de reconhecimento de voz, e terminologia dermatopatológica escrita segundo o português europeu padrão (pt-PT, sem grafia brasileira). Expande ditados de pontuação (por exemplo 'ponto final', 'vírgula', 'novo parágrafo') na pontuação respectiva. Abrevia unidades conforme a prática clínica: 'milímetros' → 'mm', 'centímetros' → 'cm'. Quando \"por\" for usado como separador de dimensões, como em \"10 por 5 mm\", escrever \"10 x 5 mm\". Não substituir \"por\" quando tiver outro significado na frase. Não inventes, não acrescentes, não removas informação clínica, não resumas e não uses markdown. Devolve apenas o texto revisto.";
 
+export const PROMPT_SEPARACAO =
+  'És um assistente de dermatopatologia em Portugal. Recebes a transcrição de um ditado que pode conter várias amostras da mesma análise. Divide o texto por amostra, respeitando os títulos que o médico ditou em voz alta (por exemplo "amostra: lesão do dorso", "amostra A, nevo do braço"). Devolve exclusivamente JSON válido, sem markdown e sem comentários, no formato {"amostras":[{"titulo":"...","texto":"..."}]}. O campo titulo é o título livre ditado pelo médico (sem a palavra "amostra" repetida, mas mantendo a letra ou número quando ditado); se não houver título, usa "Amostra 1", "Amostra 2", etc. O campo texto contém o conteúdo macroscópico dessa amostra, sem o título. Não inventes, não acrescentes, não removas nem resumas informação clínica: todo o texto original deve ficar distribuído pelas amostras. Se não existir qualquer separação, devolve uma única amostra com todo o texto.';
+
 export async function gatewayError(response: Response) {
+
   const body = await response.text();
   let message = body;
   try {
