@@ -41,7 +41,8 @@ const escolherMimeType = () => {
   return candidatos.find((t) => MediaRecorder.isTypeSupported?.(t));
 };
 
-export function RecorderPanel({ disabled, onAudio }: Props) {
+export const RecorderPanel = forwardRef<RecorderHandle, Props>(
+  function RecorderPanel({ disabled, onAudio, onEstadoChange }, ref) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
@@ -51,10 +52,15 @@ export function RecorderPanel({ disabled, onAudio }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    onEstadoChange?.(recording);
+  }, [recording, onEstadoChange]);
+
+  useEffect(() => {
     if (!recording) return;
     const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(id);
   }, [recording]);
+
 
   const iniciar = async () => {
     setErro(null);
