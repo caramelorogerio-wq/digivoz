@@ -761,12 +761,8 @@ function AppPage() {
     });
   };
 
-  const palavras = texto.trim()
-    ? texto
-        .trim()
-        .split(/\s+/)
-        .length
-    : 0;
+  const palavras = contarPalavras(texto);
+
 
   return (
     <div className="min-h-screen bg-background">
