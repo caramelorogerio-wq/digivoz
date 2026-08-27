@@ -1021,10 +1021,24 @@ function AppPage() {
 
           <div className="space-y-6">
 
+            <BarraComandosVoz
+              activo={maosLivres}
+              suportado={vozSuportada}
+              aEscutar={aEscutar}
+              ultima={ultima}
+              pendente={pendente?.descricao ?? null}
+              onAlternar={setMaosLivres}
+              ajudaAberta={ajudaVoz}
+              onAjudaChange={setAjudaVoz}
+            />
+
             <RecorderPanel
+              ref={recorderRef}
               disabled={aTranscrever}
               onAudio={handleAudio}
+              onEstadoChange={setAGravar}
             />
+
 
             <Button
               type="button"
