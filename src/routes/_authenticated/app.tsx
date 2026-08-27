@@ -626,28 +626,34 @@ function AppPage() {
   };
 
   const abrirRelatorio = (r: Relatorio) => {
-    setTexto(r.texto);
+    const guardadas = Array.isArray(r.amostras)
+      ? (r.amostras as Amostra[]).filter(
+          (a) => a && typeof a.texto === "string",
+        )
+      : [];
+
+    const lista: Amostra[] =
+      guardadas.length > 0
+        ? guardadas.map((a) => ({
+            id: a.id || novaAmostra().id,
+            titulo: a.titulo ?? "",
+            texto: a.texto ?? "",
+            resumo: { ...resumoVazio(), ...(a.resumo ?? {}) },
+          }))
+        : [
+            novaAmostra("", r.texto, {
+              fragmentos: r.fragmentos ?? 0,
+              blocos: r.blocos ?? 0,
+              seccionado: r.seccionado ?? false,
+              inclusao: r.inclusao ?? "total",
+              codigoFaturacao: r.codigo_faturacao ?? "31057",
+            }),
+          ];
+
+    setAmostras(lista);
+    setActivaId(lista[0]!.id);
     setNumeroAnalise(r.titulo);
 
-    setFragmentos(
-      r.fragmentos ?? 0,
-    );
-
-    setBlocos(
-      r.blocos ?? 0,
-    );
-
-    setSeccionado(
-      r.seccionado ?? false,
-    );
-
-    setInclusao(
-      r.inclusao ?? "total",
-    );
-
-    setCodigoFaturacao(
-      r.codigo_faturacao ?? "31057",
-    );
 
     setTextoOtimizado(null);
 
