@@ -61,8 +61,8 @@ const linha = (rotulo: string, valor: string) =>
   new Paragraph({
     spacing: { after: 60 },
     children: [
-      new TextRun({ text: `${rotulo}: `, bold: true }),
-      new TextRun(valor),
+      new TextRun({ text: `${rotulo}: `, bold: true, font: "Century Gothic", size: 20 }),
+      new TextRun({ text: valor, font: "Century Gothic", size: 20 }),
     ],
   });
 
@@ -77,7 +77,7 @@ const separador = () =>
         space: 1,
       },
     },
-    children: [new TextRun("")],
+    children: [new TextRun({ text: "", font: "Century Gothic", size: 20 })],
   });
 
 const rodapePaginas = (nota: string) =>
@@ -88,18 +88,20 @@ const rodapePaginas = (nota: string) =>
           { type: TabStopType.RIGHT, position: TabStopPosition.MAX },
         ],
         children: [
-          new TextRun({ text: nota, size: 18, color: "666666" }),
-          new TextRun({ text: "\tPágina ", size: 18, color: "666666" }),
+          new TextRun({ text: nota, size: 18, color: "666666", font: "Century Gothic" }),
+          new TextRun({ text: "\tPágina ", size: 18, color: "666666", font: "Century Gothic" }),
           new TextRun({
             children: [PageNumber.CURRENT],
             size: 18,
             color: "666666",
+            font: "Century Gothic",
           }),
-          new TextRun({ text: " de ", size: 18, color: "666666" }),
+          new TextRun({ text: " de ", size: 18, color: "666666", font: "Century Gothic" }),
           new TextRun({
             children: [PageNumber.TOTAL_PAGES],
             size: 18,
             color: "666666",
+            font: "Century Gothic",
           }),
         ],
       }),
@@ -125,7 +127,7 @@ export async function gerarRelatorioDocx({
       (l) =>
         new Paragraph({
           spacing: { after: 120 },
-          children: [new TextRun(l)],
+          children: [new TextRun({ text: l, font: "Century Gothic", size: 20 })],
         }),
     );
 
@@ -141,11 +143,13 @@ export async function gerarRelatorioDocx({
             bold: true,
             size: 20,
             color: "1F4E79",
+            font: "Century Gothic",
           }),
           new TextRun({
             text: `\t${servico}`,
             size: 18,
             color: "666666",
+            font: "Century Gothic",
           }),
         ],
       }),
@@ -163,13 +167,14 @@ export async function gerarRelatorioDocx({
             bold: true,
             size: 22,
             color: "1F4E79",
+            font: "Century Gothic",
           }),
         ],
       }),
       new Paragraph({
         alignment: AlignmentType.CENTER,
         children: [
-          new TextRun({ text: servico, size: 18, color: "666666" }),
+          new TextRun({ text: servico, size: 18, color: "666666", font: "Century Gothic" }),
         ],
       }),
       separador(),
@@ -201,7 +206,7 @@ export async function gerarRelatorioDocx({
   const doc = new Document({
     styles: {
       default: {
-        document: { run: { font: "Arial", size: 22 } },
+        document: { run: { font: "Century Gothic", size: 20 } },
       },
     },
     sections: [
@@ -228,7 +233,7 @@ export async function gerarRelatorioDocx({
                 : AlignmentType.LEFT,
             spacing: { after: 80 },
             children: [
-              new TextRun({ text: titulo, bold: true, size: 30 }),
+              new TextRun({ text: titulo, bold: true, size: 30, font: "Century Gothic" }),
             ],
           }),
 
@@ -243,6 +248,7 @@ export async function gerarRelatorioDocx({
                 text: `Relatório clínico · ${data}`,
                 color: "666666",
                 size: 20,
+                font: "Century Gothic",
               }),
             ],
           }),
@@ -252,7 +258,7 @@ export async function gerarRelatorioDocx({
           new Paragraph({
             spacing: { before: 360, after: 120 },
             children: [
-              new TextRun({ text: "Resumo técnico", bold: true, size: 26 }),
+              new TextRun({ text: "Resumo técnico", bold: true, size: 26, font: "Century Gothic" }),
             ],
           }),
 
