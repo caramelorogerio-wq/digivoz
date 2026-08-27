@@ -13,7 +13,16 @@ O campo é preparado para leitor físico de códigos de barras/QR (o leitor comp
 
 O número passa a ser o **título do relatório** (o campo "Título" separado desaparece).
 
-Tudo o resto — gravação, transcrição, otimização com IA, resumo técnico, vocabulário aprendido, exportação .txt — fica igual.
+Tudo o resto — gravação, transcrição, otimização com IA, resumo técnico, vocabulário aprendido — fica igual.
+
+## Exportação em Word
+
+O botão "Exportar como texto (.txt)" passa a **"Exportar como Word (.docx)"**:
+
+- Documento A4 com o n.º da análise como título
+- Corpo com o texto do relatório (um parágrafo por linha)
+- No fim, a secção "Resumo técnico" com fragmentos, blocos, seccionado, inclusão e código de faturação
+- Nome do ficheiro: `<n.º da análise>.docx`
 
 ## Comportamento
 
