@@ -54,11 +54,6 @@ export const Route = createFileRoute("/_authenticated/app")({
   component: AppPage,
 });
 
-type Paciente = {
-  id: string;
-  nome: string;
-  numero_processo: string | null;
-};
 
 type Relatorio = {
   id: string;
