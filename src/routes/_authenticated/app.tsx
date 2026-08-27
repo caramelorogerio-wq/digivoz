@@ -810,30 +810,26 @@ function AppPage() {
               onAudio={handleAudio}
             />
 
-            <ResumoTecnico
-              fragmentos={fragmentos}
-              blocos={blocos}
-              seccionado={seccionado}
-              inclusao={inclusao}
-              codigoFaturacao={
-                codigoFaturacao
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2"
+              disabled={aSeparar || !amostraActiva.texto.trim()}
+              onClick={() =>
+                separarAmostras(
+                  amostraActiva.id,
+                  amostraActiva.texto,
+                )
               }
-              onFragmentosChange={
-                setFragmentos
-              }
-              onBlocosChange={
-                setBlocos
-              }
-              onSeccionadoChange={
-                setSeccionado
-              }
-              onInclusaoChange={
-                setInclusao
-              }
-              onCodigoFaturacaoChange={
-                setCodigoFaturacao
-              }
-            />
+            >
+              {aSeparar ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <SplitSquareVertical className="size-4" />
+              )}
+              Separar amostras do ditado
+            </Button>
+
 
             <CampoAnalise
               valor={numeroAnalise}
