@@ -513,7 +513,7 @@ function AppPage() {
       "Relatório guardado na sua conta.",
     );
 
-    setTitulo("");
+    setNumeroAnalise("");
     setTextoOtimizado(null);
 
     await carregar();
