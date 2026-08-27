@@ -948,15 +948,16 @@ function AppPage() {
 
           <div className="space-y-6">
 
-            <section className="panel flex flex-col p-6">
+            <section className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">
-                    Texto transcrito
+                    Amostras da análise
                   </h2>
 
                   <p className="text-sm text-muted-foreground">
-                    Reveja e corrija antes de guardar ou exportar.
+                    Dite tudo seguido dizendo &quot;amostra&quot; antes de cada
+                    uma, ou edite cada bloco aqui.
                   </p>
                 </div>
 
@@ -965,19 +966,25 @@ function AppPage() {
                 </span>
               </div>
 
-
-              <Textarea
-                value={texto}
-                onChange={(e) =>
-                  setTexto(
-                    e.target.value,
-                  )
+              <ListaAmostras
+                amostras={amostras}
+                activaId={amostraActiva.id}
+                onActivar={setActivaId}
+                onTituloChange={(id, titulo) =>
+                  actualizarAmostra(id, { titulo })
                 }
-                placeholder="O texto transcrito aparecerá aqui."
-                className="mt-4 min-h-[360px] flex-1 resize-none text-sm leading-relaxed"
+                onTextoChange={(id, t) =>
+                  actualizarAmostra(id, { texto: t })
+                }
+                onResumoChange={(id, resumo) =>
+                  actualizarAmostra(id, { resumo })
+                }
+                onAdicionar={adicionarAmostra}
+                onRemover={removerAmostra}
+                onMover={moverAmostra}
               />
 
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Button
                   onClick={otimizarTexto}
                   className="gap-2"
@@ -1026,9 +1033,11 @@ function AppPage() {
                 <Button
                   variant="outline"
                   className="gap-2"
-                  onClick={() =>
-                    setTexto("")
-                  }
+                  onClick={() => {
+                    const nova = novaAmostra();
+                    setAmostras([nova]);
+                    setActivaId(nova.id);
+                  }}
                   disabled={!texto}
                 >
                   <Eraser className="size-4" />
@@ -1036,6 +1045,7 @@ function AppPage() {
                 </Button>
               </div>
             </section>
+
 
             <section className="panel p-6">
               <h2 className="text-lg font-semibold text-foreground">
