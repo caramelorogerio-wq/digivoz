@@ -527,6 +527,10 @@ function AppPage() {
       const blob = await gerarRelatorioDocx({
         numeroAnalise: numeroAnalise.trim(),
         texto: texto.trim(),
+        template,
+        instituicao: instituicao.trim() || "DermaVoz",
+        servico:
+          servico.trim() || "Serviço de Dermatopatologia",
         resumo: {
           fragmentos,
           blocos,
