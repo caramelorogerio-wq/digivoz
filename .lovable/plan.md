@@ -1,28 +1,27 @@
-# Corrigir "App, iniciar gravação" no modo mãos livres
+# Resumo técnico compacto no Word (tabela em paralelo)
 
-## Problema relatado
+## Problema
 
-Com o modo mãos livres ligado, ao dizer "App, iniciar gravação" o ditado não acaba no campo da amostra: só aparece na barra de comandos (linha "Ouvido: …").
+Hoje, na exportação Word, cada campo do resumo técnico ocupa uma linha própria ("N.º de fragmentos", "N.º de blocos", "Seccionado", "Inclusão", "Código de faturação"), o que gasta 5-6 linhas por amostra.
 
-## Diagnóstico (por confirmar no primeiro passo)
+## Solução
 
-O painel de comandos e o gravador pedem o microfone em paralelo: o reconhecimento do navegador está em escuta contínua e o `MediaRecorder` é aberto com um segundo `getUserMedia`. No Edge/Chrome isto costuma resultar em o gravador não arrancar (ou arrancar sem áudio útil), enquanto o reconhecimento continua a mostrar tudo o que é dito na barra de comandos. Hoje nada disto é visível: o comando mostra logo "A gravar…" mesmo quando o gravador falha.
+Substituir essas linhas por uma tabela discreta de 2 colunas (rótulo/valor em paralelo), sem grelha visível, que passa a ocupar cerca de 3 linhas:
 
-Primeiro passo da implementação: reproduzir no browser com o modo mãos livres ligado e confirmar se o `MediaRecorder` chega mesmo ao estado "recording" e se produz áudio.
+```text
+Resumo técnico da amostra
+N.º de fragmentos: 3        Seccionado: Sim
+N.º de blocos: 2            Inclusão: Total
+Código de faturação: 31057
+```
 
-## O que vai ser feito
-
-1. **Comando honesto**: "App, iniciar gravação" passa a esperar pelo arranque real do gravador. Só mostra "A gravar…" quando o gravador está mesmo activo; se falhar, mostra o motivo em vez de uma mensagem de sucesso falsa.
-2. **Um único microfone**: o gravador passa a ser a origem do áudio durante a gravação. O reconhecimento de comandos é suspenso enquanto se grava e retomado ao parar, evitando o conflito de microfone.
-3. **Parar por voz continua a funcionar**: durante a gravação fica activa uma escuta mínima só para "App, parar" / "App, terminar", que é desligada assim que a gravação termina (retomando os comandos completos).
-4. **Estado visível**: a barra de comandos mostra claramente "A gravar — diga 'App, parar'" enquanto grava, para o médico perceber onde está o áudio.
-5. **Texto na amostra certa**: confirmar que a transcrição resultante entra sempre na amostra activa no momento em que a gravação começou, mesmo que a amostra activa mude entretanto.
+- Mantém-se o mesmo conteúdo e os mesmos rótulos, só muda a disposição.
+- Century Gothic 10pt, coerente com o resto do documento.
+- Nos relatórios de amostra única, o "N.º da análise" entra como primeiro campo da tabela.
+- Sem bordas visíveis (apenas uma linha fina superior a separar do texto, opcional), com espaçamento interno mínimo nas células.
 
 ## Notas técnicas
 
-- `src/components/recorder-panel.tsx`: `iniciar()`/`parar()` expostos por ref passam a devolver `Promise<boolean>` com o resultado real do arranque; erros de `getUserMedia` propagam mensagem.
-- `src/hooks/use-reconhecimento-voz.ts`: acrescentar uma pausa/retoma controlada (`suspenso`) sem destruir o hook, para libertar o microfone durante a gravação.
-- `src/routes/_authenticated/app.tsx`: o caso `iniciar-gravacao` aguarda o arranque, suspende os comandos e guarda o id da amostra alvo; `parar-gravacao` retoma a escuta.
-- `src/components/barra-comandos-voz.tsx`: novo estado visual de gravação (apenas apresentação).
-
-Sem alterações à base de dados, à transcrição por IA nem à exportação Word.
+- `src/lib/relatorio-docx.ts`: o bloco de `linha(...)` em `corpoAmostra` passa a construir uma `Table` com `WidthType.DXA`, `columnWidths` somando à largura útil da página (A4 com margens actuais), `borders` a `BorderStyle.NONE` e `margins` pequenas nas células.
+- `corpoAmostra` passa a devolver `(Paragraph | Table)[]`; ajustar as assinaturas e o `children` das secções em conformidade.
+- Sem alterações à interface, à base de dados ou ao componente `resumo-tecnico.tsx`.
