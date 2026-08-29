@@ -433,9 +433,15 @@ export async function gerarRelatorioDocx({
               ]
             : []),
 
-          ...lista.flatMap((amostra, indice) =>
-            corpoAmostra(amostra, indice),
-          ),
+          ...lista.flatMap((amostra, indice) => {
+            const primeiro =
+              lista
+                .slice(0, indice)
+                .reduce((t, a) => t + (a.resumo.blocos || 0), 0) + 1;
+
+            return corpoAmostra(amostra, indice, primeiro);
+          }),
+
 
         ],
       },
