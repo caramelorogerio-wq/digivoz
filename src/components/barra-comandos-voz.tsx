@@ -40,8 +40,9 @@ export function BarraComandosVoz({
           </h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Diga <strong>&quot;DermaVoz&quot;</strong> seguido do comando — por
-            exemplo, &quot;DermaVoz, iniciar gravação&quot;.
+            Diga <strong>&quot;App&quot;</strong> seguido do comando — por
+            exemplo, &quot;App, iniciar gravação&quot;. (&quot;DermaVoz&quot;
+            também continua a funcionar.)
           </p>
         </div>
 
@@ -88,8 +89,8 @@ export function BarraComandosVoz({
 
           {pendente && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-              {pendente} — diga <strong>&quot;DermaVoz, confirmar&quot;</strong>{" "}
-              ou <strong>&quot;DermaVoz, cancelar&quot;</strong>.
+              {pendente} — diga <strong>&quot;App, confirmar&quot;</strong> ou{" "}
+              <strong>&quot;App, cancelar&quot;</strong>.
             </p>
           )}
 
