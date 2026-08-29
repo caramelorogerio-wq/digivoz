@@ -8,10 +8,15 @@ import {
   PageNumber,
   Packer,
   Paragraph,
+  Table,
+  TableCell,
+  TableRow,
   TabStopPosition,
   TabStopType,
   TextRun,
+  WidthType,
 } from "docx";
+
 
 export type ResumoDocx = {
   fragmentos: number;
