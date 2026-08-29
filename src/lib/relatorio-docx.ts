@@ -8,10 +8,15 @@ import {
   PageNumber,
   Packer,
   Paragraph,
+  Table,
+  TableCell,
+  TableRow,
   TabStopPosition,
   TabStopType,
   TextRun,
+  WidthType,
 } from "docx";
+
 
 export type ResumoDocx = {
   fragmentos: number;
@@ -75,6 +80,75 @@ const linha = (rotulo: string, valor: string) =>
       new TextRun({ text: valor, font: "Century Gothic", size: 20 }),
     ],
   });
+
+/** Largura útil da página A4 com as margens usadas nos modelos. */
+const LARGURA_UTIL = 9638;
+const COLUNA = LARGURA_UTIL / 2;
+
+const SEM_BORDAS = {
+  top: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  bottom: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  left: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  right: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideHorizontal: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+  insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
+};
+
+const celula = (campo?: [string, string]) =>
+  new TableCell({
+    width: { size: COLUNA, type: WidthType.DXA },
+    borders: SEM_BORDAS,
+    margins: { top: 20, bottom: 20, left: 0, right: 120 },
+    children: [
+      new Paragraph({
+        spacing: { after: 0 },
+        children: campo
+          ? [
+              new TextRun({
+                text: `${campo[0]}: `,
+                bold: true,
+                font: "Century Gothic",
+                size: 20,
+              }),
+              new TextRun({
+                text: campo[1],
+                font: "Century Gothic",
+                size: 20,
+              }),
+            ]
+          : [new TextRun({ text: "", font: "Century Gothic", size: 20 })],
+      }),
+    ],
+  });
+
+/** Campos do resumo técnico em duas colunas paralelas, sem grelha visível. */
+const tabelaResumo = (campos: [string, string][]) => {
+  const linhas: TableRow[] = [];
+
+  for (let i = 0; i < campos.length; i += 2) {
+    linhas.push(
+      new TableRow({
+        children: [celula(campos[i]), celula(campos[i + 1])],
+      }),
+    );
+  }
+
+  return new Table({
+    width: { size: LARGURA_UTIL, type: WidthType.DXA },
+    columnWidths: [COLUNA, COLUNA],
+    borders: SEM_BORDAS,
+    rows: linhas,
+  });
+};
+
+/** "1 a 3", "4 a 6", "4" (bloco único) ou "0". */
+export const intervaloBlocos = (inicio: number, quantidade: number) => {
+  if (quantidade <= 0) return "0";
+  if (quantidade === 1) return String(inicio);
+  return `${inicio} a ${inicio + quantidade - 1}`;
+};
+
+
 
 const separador = () =>
   new Paragraph({
@@ -154,8 +228,9 @@ export async function gerarRelatorioDocx({
   const corpoAmostra = (
     amostra: AmostraDocx,
     indice: number,
-  ): Paragraph[] => {
-    const paragrafos: Paragraph[] = [];
+    primeiroBloco: number,
+  ): (Paragraph | Table)[] => {
+    const paragrafos: (Paragraph | Table)[] = [];
 
     if (varias || amostra.titulo.trim()) {
       paragrafos.push(
@@ -192,9 +267,26 @@ export async function gerarRelatorioDocx({
         ),
     );
 
+    const campos: [string, string][] = [
+      ...(varias
+        ? []
+        : ([["N.º da análise", titulo]] as [string, string][])),
+      ["N.º de fragmentos", String(amostra.resumo.fragmentos)],
+      [
+        "N.º de blocos",
+        intervaloBlocos(primeiroBloco, amostra.resumo.blocos),
+      ],
+      ["Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"],
+      [
+        "Inclusão",
+        amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
+      ],
+      ["Código de faturação", amostra.resumo.codigoFaturacao],
+    ];
+
     paragrafos.push(
       new Paragraph({
-        spacing: { before: 240, after: 120 },
+        spacing: { before: 240, after: 80 },
         children: [
           new TextRun({
             text: varias ? "Resumo técnico da amostra" : "Resumo técnico",
@@ -204,18 +296,11 @@ export async function gerarRelatorioDocx({
           }),
         ],
       }),
-      ...(varias ? [] : [linha("N.º da análise", titulo)]),
-      linha("N.º de fragmentos", String(amostra.resumo.fragmentos)),
-      linha("N.º de blocos", String(amostra.resumo.blocos)),
-      linha("Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"),
-      linha(
-        "Inclusão",
-        amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
-      ),
-      linha("Código de faturação", amostra.resumo.codigoFaturacao),
+      tabelaResumo(campos),
     );
 
     return paragrafos;
+
   };
 
 
@@ -348,9 +433,15 @@ export async function gerarRelatorioDocx({
               ]
             : []),
 
-          ...lista.flatMap((amostra, indice) =>
-            corpoAmostra(amostra, indice),
-          ),
+          ...lista.flatMap((amostra, indice) => {
+            const primeiro =
+              lista
+                .slice(0, indice)
+                .reduce((t, a) => t + (a.resumo.blocos || 0), 0) + 1;
+
+            return corpoAmostra(amostra, indice, primeiro);
+          }),
+
 
         ],
       },
