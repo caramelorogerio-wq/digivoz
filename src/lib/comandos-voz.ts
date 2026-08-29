@@ -3,7 +3,7 @@
  *
  * Cada frase captada pelo navegador é normalizada (sem acentos, sem
  * pontuação) e comparada com os padrões abaixo. Só as frases iniciadas pela
- * palavra de activação ("DermaVoz") são tratadas como comando — tudo o resto
+ * palavra de activação ("App") são tratadas como comando — tudo o resto
  * é ditado normal e é ignorado por este módulo.
  */
 
@@ -41,7 +41,7 @@ export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
   "sair",
 ]);
 
-export const PALAVRA_ACTIVACAO = "DermaVoz";
+export const PALAVRA_ACTIVACAO = "App";
 
 const NUMEROS: Record<string, number> = {
   zero: 0,
@@ -110,6 +110,10 @@ export const normalizar = (frase: string) =>
     .trim();
 
 const VARIANTES_ACTIVACAO = [
+  "app",
+  "ap",
+  "apo",
+  "apps",
   "dermavoz",
   "derma voz",
   "derma vos",
@@ -249,22 +253,22 @@ export function interpretarComando(texto: string): Comando | null {
 
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
-  { dizer: "DermaVoz, análise C26H0000", faz: "Preenche o n.º da análise" },
-  { dizer: "DermaVoz, iniciar gravação", faz: "Começa a gravar" },
-  { dizer: "DermaVoz, parar", faz: "Pára e transcreve" },
-  { dizer: "DermaVoz, nova amostra", faz: "Cria uma amostra" },
-  { dizer: "DermaVoz, amostra dois", faz: "Muda para essa amostra" },
-  { dizer: "DermaVoz, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
-  { dizer: "DermaVoz, separar amostras", faz: "Separa o ditado em amostras" },
+  { dizer: "App, análise C26H0000", faz: "Preenche o n.º da análise" },
+  { dizer: "App, iniciar gravação", faz: "Começa a gravar" },
+  { dizer: "App, parar", faz: "Pára e transcreve" },
+  { dizer: "App, nova amostra", faz: "Cria uma amostra" },
+  { dizer: "App, amostra dois", faz: "Muda para essa amostra" },
+  { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
+  { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
   {
-    dizer: "DermaVoz, resumo técnico 3 fragmentos 2 blocos seccionado total",
+    dizer: "App, resumo técnico 3 fragmentos 2 blocos seccionado total",
     faz: "Preenche o resumo técnico",
   },
-  { dizer: "DermaVoz, otimizar", faz: "Otimiza o relatório com IA" },
-  { dizer: "DermaVoz, guardar", faz: "Guarda o relatório" },
-  { dizer: "DermaVoz, exportar", faz: "Gera o ficheiro Word" },
-  { dizer: "DermaVoz, copiar", faz: "Copia o texto" },
-  { dizer: "DermaVoz, novo relatório", faz: "Limpa tudo (confirmar)" },
-  { dizer: "DermaVoz, terminar sessão", faz: "Sai da conta (confirmar)" },
-  { dizer: "DermaVoz, ajuda", faz: "Mostra esta lista" },
+  { dizer: "App, otimizar", faz: "Otimiza o relatório com IA" },
+  { dizer: "App, guardar", faz: "Guarda o relatório" },
+  { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
+  { dizer: "App, copiar", faz: "Copia o texto" },
+  { dizer: "App, novo relatório", faz: "Limpa tudo (confirmar)" },
+  { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
+  { dizer: "App, ajuda", faz: "Mostra esta lista" },
 ];
