@@ -228,8 +228,9 @@ export async function gerarRelatorioDocx({
   const corpoAmostra = (
     amostra: AmostraDocx,
     indice: number,
-  ): Paragraph[] => {
-    const paragrafos: Paragraph[] = [];
+    primeiroBloco: number,
+  ): (Paragraph | Table)[] => {
+    const paragrafos: (Paragraph | Table)[] = [];
 
     if (varias || amostra.titulo.trim()) {
       paragrafos.push(
@@ -266,9 +267,26 @@ export async function gerarRelatorioDocx({
         ),
     );
 
+    const campos: [string, string][] = [
+      ...(varias
+        ? []
+        : ([["N.º da análise", titulo]] as [string, string][])),
+      ["N.º de fragmentos", String(amostra.resumo.fragmentos)],
+      [
+        "N.º de blocos",
+        intervaloBlocos(primeiroBloco, amostra.resumo.blocos),
+      ],
+      ["Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"],
+      [
+        "Inclusão",
+        amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
+      ],
+      ["Código de faturação", amostra.resumo.codigoFaturacao],
+    ];
+
     paragrafos.push(
       new Paragraph({
-        spacing: { before: 240, after: 120 },
+        spacing: { before: 240, after: 80 },
         children: [
           new TextRun({
             text: varias ? "Resumo técnico da amostra" : "Resumo técnico",
@@ -278,18 +296,11 @@ export async function gerarRelatorioDocx({
           }),
         ],
       }),
-      ...(varias ? [] : [linha("N.º da análise", titulo)]),
-      linha("N.º de fragmentos", String(amostra.resumo.fragmentos)),
-      linha("N.º de blocos", String(amostra.resumo.blocos)),
-      linha("Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"),
-      linha(
-        "Inclusão",
-        amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
-      ),
-      linha("Código de faturação", amostra.resumo.codigoFaturacao),
+      tabelaResumo(campos),
     );
 
     return paragrafos;
+
   };
 
 
