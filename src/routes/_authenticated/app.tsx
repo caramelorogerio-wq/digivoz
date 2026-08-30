@@ -800,6 +800,22 @@ function AppPage() {
   const aGravarRef = useRef(false);
   aGravarRef.current = aGravar;
 
+  /** Campo do resumo técnico a preencher por voz (modo guiado). */
+  const [campoResumo, setCampoResumo] = useState<CampoResumo | null>(null);
+  const campoResumoRef = useRef<CampoResumo | null>(null);
+  campoResumoRef.current = campoResumo;
+
+  const sairModoResumo = useCallback(() => {
+    campoResumoRef.current = null;
+    setCampoResumo(null);
+  }, []);
+
+  const irParaCampo = useCallback((campo: CampoResumo | null) => {
+    campoResumoRef.current = campo;
+    setCampoResumo(campo);
+    if (campo) toast.info(PERGUNTAS_RESUMO[campo].pergunta);
+  }, []);
+
   const tratarEstadoGravacao = useCallback((activa: boolean) => {
     setAGravar(activa);
     aGravarRef.current = activa;
