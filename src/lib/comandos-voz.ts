@@ -199,28 +199,74 @@ const numeroDe = (palavra: string | undefined): number | undefined => {
   return NUMEROS[palavra];
 };
 
-/** "c dois seis h zero zero" → "C26H00" (leitura soletrada do código de barras). */
+/**
+ * Converte a leitura soletrada de um código em texto.
+ *
+ * "cê vinte e seis agá zero zero zero zero" → "C26H0000"
+ * "dê eme pê traço zero zero um"            → "DMP-001"
+ */
 function juntarCodigo(texto: string): string {
   const partes = texto.split(" ").filter(Boolean);
+
   let saida = "";
+  let pendente: number | null = null;
+
+  const descarregar = () => {
+    if (pendente !== null) {
+      saida += String(pendente);
+      pendente = null;
+    }
+  };
 
   for (const p of partes) {
+    // "vinte e seis" — o "e" liga dois números, senão é ignorado.
+    if (p === "e") continue;
+
+    if (p === "espaco") {
+      descarregar();
+      continue;
+    }
+
+    if (p in SEPARADORES) {
+      descarregar();
+      saida += SEPARADORES[p];
+      continue;
+    }
+
     if (/^\d+$/.test(p)) {
+      descarregar();
       saida += p;
       continue;
     }
-    if (p in NUMEROS) {
-      saida += String(NUMEROS[p]);
+
+    const valor = NUMEROS[p];
+
+    if (valor !== undefined) {
+      if (
+        pendente !== null &&
+        pendente >= 20 &&
+        pendente % 10 === 0 &&
+        valor < pendente
+      ) {
+        pendente += valor;
+      } else {
+        descarregar();
+        pendente = valor;
+      }
       continue;
     }
-    if (p in LETRAS_DITADAS) {
-      saida += LETRAS_DITADAS[p];
-      continue;
-    }
-    saida += p.toUpperCase();
+
+    descarregar();
+
+    const letra = LETRAS_DITADAS[p];
+    saida += letra ?? p.toUpperCase();
   }
-  return saida;
+
+  descarregar();
+
+  return saida.replace(/\s+/g, "").toUpperCase();
 }
+
 
 function lerResumo(texto: string): ResumoComando | null {
   const resumo: ResumoComando = {};
