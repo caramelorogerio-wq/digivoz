@@ -28,7 +28,7 @@ Frases curtas sem entrar no modo guiado, para correcções pontuais:
 - `App, inclusão total` / `App, reserva`
 - `App, código 31077`
 
-A frase longa actual mantém-se válida, para quem já lhe está habituado.
+A frase longa actual (`App, resumo técnico 3 fragmentos 2 blocos seccionado total`) deixa de existir.
 
 ## Notas técnicas
 
