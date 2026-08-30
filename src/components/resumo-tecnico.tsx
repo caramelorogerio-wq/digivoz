@@ -1,6 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+export type CampoResumoActivo =
+  | "fragmentos"
+  | "blocos"
+  | "seccionado"
+  | "inclusao"
+  | "codigoFaturacao"
+  | null;
+
 type Props = {
   fragmentos: number;
   blocos: number;
@@ -16,6 +24,8 @@ type Props = {
   idPrefix?: string;
   /** Versão compacta, para usar dentro do cartão de uma amostra. */
   compacto?: boolean;
+  /** Campo a preencher por voz (modo guiado) — recebe realce visual. */
+  campoActivo?: CampoResumoActivo;
 };
 
 export function ResumoTecnico({
@@ -31,8 +41,13 @@ export function ResumoTecnico({
   onCodigoFaturacaoChange,
   idPrefix = "resumo",
   compacto = false,
+  campoActivo = null,
 }: Props) {
   const id = (campo: string) => `${idPrefix}-${campo}`;
+  const realce = (campo: NonNullable<CampoResumoActivo>) =>
+    campoActivo === campo
+      ? "space-y-2 rounded-md p-2 ring-2 ring-clinical"
+      : "space-y-2";
 
   return (
     <section
@@ -61,7 +76,7 @@ export function ResumoTecnico({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className={realce("fragmentos")}>
           <Label htmlFor={id("fragmentos")}>
             N.º de fragmentos
           </Label>
@@ -77,7 +92,7 @@ export function ResumoTecnico({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className={realce("blocos")}>
           <Label htmlFor={id("blocos")}>N.º de blocos</Label>
 
           <Input
@@ -92,7 +107,7 @@ export function ResumoTecnico({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className={realce("seccionado")}>
         <Label>Fragmento</Label>
 
         <div className="flex gap-4">
@@ -118,7 +133,7 @@ export function ResumoTecnico({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className={realce("inclusao")}>
         <Label>Inclusão</Label>
 
         <div className="flex gap-4">
@@ -144,7 +159,7 @@ export function ResumoTecnico({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className={realce("codigoFaturacao")}>
         <Label htmlFor={id("codigo-faturacao")}>
           Código de faturação
         </Label>

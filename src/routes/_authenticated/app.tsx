@@ -22,9 +22,13 @@ import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel"
 import { BarraComandosVoz } from "@/components/barra-comandos-voz";
 import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
 import {
+  CAMPOS_RESUMO,
   COMANDOS_DESTRUTIVOS,
+  PERGUNTAS_RESUMO,
   extrairComando,
   interpretarComando,
+  interpretarRespostaResumo,
+  type CampoResumo,
   type Comando,
 } from "@/lib/comandos-voz";
 
@@ -796,6 +800,22 @@ function AppPage() {
   const aGravarRef = useRef(false);
   aGravarRef.current = aGravar;
 
+  /** Campo do resumo técnico a preencher por voz (modo guiado). */
+  const [campoResumo, setCampoResumo] = useState<CampoResumo | null>(null);
+  const campoResumoRef = useRef<CampoResumo | null>(null);
+  campoResumoRef.current = campoResumo;
+
+  const sairModoResumo = useCallback(() => {
+    campoResumoRef.current = null;
+    setCampoResumo(null);
+  }, []);
+
+  const irParaCampo = useCallback((campo: CampoResumo | null) => {
+    campoResumoRef.current = campo;
+    setCampoResumo(campo);
+    if (campo) toast.info(PERGUNTAS_RESUMO[campo].pergunta);
+  }, []);
+
   const tratarEstadoGravacao = useCallback((activa: boolean) => {
     setAGravar(activa);
     aGravarRef.current = activa;
@@ -940,6 +960,10 @@ function AppPage() {
         toast.success("Resumo técnico actualizado.");
         break;
 
+      case "resumo-guiado":
+        irParaCampo(CAMPOS_RESUMO[0]);
+        break;
+
       case "separar":
         void a.separarAmostras(
           a.amostraActiva.id,
@@ -979,13 +1003,69 @@ function AppPage() {
       default:
         break;
     }
-  }, []);
+
+    if (
+      c.tipo === "iniciar-gravacao" ||
+      c.tipo === "nova-amostra" ||
+      c.tipo === "ir-amostra" ||
+      c.tipo === "novo-relatorio"
+    ) {
+      sairModoResumo();
+    }
+  }, [irParaCampo, sairModoResumo]);
 
   const tratarFrase = useCallback(
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
       if (!isFinal) return;
 
       const corpo = extrairComando(transcript);
+
+      // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
+      const campo = campoResumoRef.current;
+      if (campo && !aGravarRef.current && corpo === null) {
+        const r = interpretarRespostaResumo(campo, transcript);
+        if (!r) {
+          toast.error(
+            `Não percebi. ${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+
+        const indice = CAMPOS_RESUMO.indexOf(campo);
+
+        if (r.tipo === "sair") {
+          sairModoResumo();
+          toast.info("Resumo técnico terminado.");
+          return;
+        }
+        if (r.tipo === "repetir") {
+          toast.info(
+            `${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+        if (r.tipo === "voltar") {
+          irParaCampo(CAMPOS_RESUMO[Math.max(0, indice - 1)] ?? campo);
+          return;
+        }
+
+        if (r.tipo === "valor") {
+          const a = accoesRef.current;
+          a.actualizarAmostra(a.amostraActiva.id, {
+            resumo: { ...a.amostraActiva.resumo, ...r.resumo },
+          });
+        }
+
+        const proximo = CAMPOS_RESUMO[indice + 1] ?? null;
+        if (proximo) {
+          irParaCampo(proximo);
+        } else {
+          sairModoResumo();
+          toast.success("Resumo técnico preenchido.");
+        }
+        return;
+      }
+
       if (corpo === null) return; // ditado normal
 
       const comando = interpretarComando(corpo);
@@ -1036,7 +1116,7 @@ function AppPage() {
 
       executar(comando);
     },
-    [executar],
+    [executar, irParaCampo, sairModoResumo],
   );
 
   const {
@@ -1106,6 +1186,11 @@ function AppPage() {
               onAjudaChange={setAjudaVoz}
               aGravar={aGravar}
               vozSuspensa={vozSuspensa}
+              perguntaResumo={
+                campoResumo
+                  ? `${PERGUNTAS_RESUMO[campoResumo].pergunta} (${PERGUNTAS_RESUMO[campoResumo].exemplos})`
+                  : null
+              }
             />
 
             <RecorderPanel
@@ -1274,6 +1359,7 @@ function AppPage() {
               </div>
 
               <ListaAmostras
+              campoResumoActivo={campoResumo}
                 amostras={amostras}
                 activaId={amostraActiva.id}
                 onActivar={setActivaId}
