@@ -151,7 +151,13 @@ function AppPage() {
   const amostraActiva =
     amostras.find((a) => a.id === activaId) ?? amostras[0]!;
 
+  /** Amostra fixada como destino no momento em que a gravação arranca. */
+  const alvoGravacaoRef = useRef<string | null>(null);
+  const amostrasRef = useRef(amostras);
+  amostrasRef.current = amostras;
+
   const texto = textoCompleto(amostras);
+
 
   const actualizarAmostra = (
     id: string,
