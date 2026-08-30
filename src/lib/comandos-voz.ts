@@ -482,6 +482,8 @@ export function interpretarComando(texto: string): Comando | null {
 
   if (/^(confirmar|confirmo|sim|confirma)$/.test(t)) return { tipo: "confirmar" };
   if (/^(cancelar|cancela|nao|anular)$/.test(t)) return { tipo: "cancelar" };
+  if (/^(repetir|repete|outra vez|diz outra vez)$/.test(t))
+    return { tipo: "repetir" };
 
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
