@@ -1097,7 +1097,7 @@ function AppPage() {
 
       if (comando.tipo === "repetir") {
         if (ultimaFraseRef.current) {
-          toast.info(`Última frase ouvida: "${ultimaFraseRef.current}". Pode dizer de novo.");
+          toast.info(`Última frase ouvida: "${ultimaFraseRef.current}". Pode dizer de novo.`);
         } else {
           toast.info("Não há nenhuma frase para repetir.");
         }
