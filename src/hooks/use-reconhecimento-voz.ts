@@ -108,7 +108,10 @@ export function useReconhecimentoVoz(opts: {
     instancia.onend = () => {
       setAEscutar(false);
       if (cancelado || !refActivo.current) return;
-      // O navegador corta a sessão periodicamente: retomar a escuta.
+      // O navegador corta a sessão periodicamente: retomar a escuta rapidamente.
+      // Nota: o tempo de silêncio antes do navegador considerar a frase terminada
+      // é controlado pelo motor de reconhecimento do navegador (Web Speech API);
+      // usamos continuous=true para manter a sessão activa o máximo possível.
       window.setTimeout(() => {
         if (cancelado || !refActivo.current) return;
         try {
@@ -117,7 +120,7 @@ export function useReconhecimentoVoz(opts: {
         } catch {
           // já em curso
         }
-      }, 300);
+      }, 100);
     };
 
     try {
