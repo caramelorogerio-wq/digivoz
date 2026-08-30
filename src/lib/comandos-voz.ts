@@ -33,7 +33,8 @@ export type Comando =
   | { tipo: "sair" }
   | { tipo: "ajuda" }
   | { tipo: "confirmar" }
-  | { tipo: "cancelar" };
+  | { tipo: "cancelar" }
+  | { tipo: "repetir" };
 
 /** Acções que só executam depois de um "confirmar". */
 export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
@@ -379,6 +380,98 @@ export function interpretarRespostaResumo(
   return null;
 }
 
+/** Distância de Levenshtein normalizada (0 a 1, onde 1 = igual). */
+function semelhanca(a: string, b: string): number {
+  const s1 = normalizar(a).replace(/\s+/g, "");
+  const s2 = normalizar(b).replace(/\s+/g, "");
+  if (s1 === s2) return 1;
+  if (!s1.length || !s2.length) return 0;
+
+  const m = s1.length;
+  const n = s2.length;
+  const dp = Array<number>(n + 1).fill(0);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]!;
+    dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const temp = dp[j]!;
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[j] = prev;
+      } else {
+        dp[j] = 1 + Math.min(prev, dp[j]!, dp[j - 1]!);
+      }
+      prev = temp;
+    }
+  }
+
+  const dist = dp[n] ?? 0;
+  return 1 - dist / Math.max(m, n);
+}
+
+export type SugestaoComando = {
+  frase: string;
+  comando: Comando;
+  score: number;
+};
+
+const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
+  { frase: "análise", comando: { tipo: "ajuda" } }, // placeholder; analise tem valor dinâmico
+  { frase: "iniciar gravação", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "começar a gravar", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "gravar", comando: { tipo: "iniciar-gravacao" } },
+  { frase: "parar gravação", comando: { tipo: "parar-gravacao" } },
+  { frase: "terminar gravação", comando: { tipo: "parar-gravacao" } },
+  { frase: "nova amostra", comando: { tipo: "nova-amostra" } },
+  { frase: "próxima amostra", comando: { tipo: "nova-amostra" } },
+  { frase: "amostra", comando: { tipo: "ir-amostra", indice: 1 } },
+  { frase: "apagar amostra", comando: { tipo: "apagar-amostra" } },
+  { frase: "remover amostra", comando: { tipo: "apagar-amostra" } },
+  { frase: "separar amostras", comando: { tipo: "separar" } },
+  { frase: "dividir amostras", comando: { tipo: "separar" } },
+  { frase: "otimizar relatório", comando: { tipo: "otimizar" } },
+  { frase: "optimizar", comando: { tipo: "otimizar" } },
+  { frase: "guardar relatório", comando: { tipo: "guardar" } },
+  { frase: "guardar", comando: { tipo: "guardar" } },
+  { frase: "exportar word", comando: { tipo: "exportar" } },
+  { frase: "exportar", comando: { tipo: "exportar" } },
+  { frase: "copiar texto", comando: { tipo: "copiar" } },
+  { frase: "copiar", comando: { tipo: "copiar" } },
+  { frase: "novo relatório", comando: { tipo: "novo-relatorio" } },
+  { frase: "limpar tudo", comando: { tipo: "novo-relatorio" } },
+  { frase: "terminar sessão", comando: { tipo: "sair" } },
+  { frase: "sair", comando: { tipo: "sair" } },
+  { frase: "resumo técnico", comando: { tipo: "resumo-guiado" } },
+  { frase: "preencher resumo", comando: { tipo: "resumo-guiado" } },
+  { frase: "ajuda", comando: { tipo: "ajuda" } },
+  { frase: "comandos", comando: { tipo: "ajuda" } },
+  { frase: "confirmar", comando: { tipo: "confirmar" } },
+  { frase: "sim", comando: { tipo: "confirmar" } },
+  { frase: "cancelar", comando: { tipo: "cancelar" } },
+  { frase: "não", comando: { tipo: "cancelar" } },
+  { frase: "repetir", comando: { tipo: "repetir" } },
+  { frase: "outra vez", comando: { tipo: "repetir" } },
+];
+
+/**
+ * Devolve os comandos mais parecidos com o texto ouvido.
+ * Limiares: ≥0.9 executa directamente; ≥0.6 sugere; abaixo só lista genérica.
+ */
+export function sugerirComandos(texto: string): SugestaoComando[] {
+  const t = normalizar(texto);
+  if (!t) return [];
+
+  const scored = FRASES_COMANDO.map(({ frase, comando }) => ({
+    frase,
+    comando,
+    score: semelhanca(t, frase),
+  }));
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.filter((s) => s.score >= 0.45).slice(0, 3);
+}
+
 /**
  * Interpreta o texto que vem depois da palavra de activação.
  * Devolve `null` quando nenhum comando é reconhecido.
@@ -389,6 +482,8 @@ export function interpretarComando(texto: string): Comando | null {
 
   if (/^(confirmar|confirmo|sim|confirma)$/.test(t)) return { tipo: "confirmar" };
   if (/^(cancelar|cancela|nao|anular)$/.test(t)) return { tipo: "cancelar" };
+  if (/^(repetir|repete|outra vez|diz outra vez)$/.test(t))
+    return { tipo: "repetir" };
 
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
@@ -479,6 +574,7 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, guardar", faz: "Guarda o relatório" },
   { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
   { dizer: "App, copiar", faz: "Copia o texto" },
+  { dizer: "App, repetir", faz: "Repete a última frase ouvida" },
   { dizer: "App, novo relatório", faz: "Limpa tudo (confirmar)" },
   { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
   { dizer: "App, ajuda", faz: "Mostra esta lista" },

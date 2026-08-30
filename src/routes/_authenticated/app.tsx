@@ -28,8 +28,10 @@ import {
   extrairComando,
   interpretarComando,
   interpretarRespostaResumo,
+  sugerirComandos,
   type CampoResumo,
   type Comando,
+  type SugestaoComando,
 } from "@/lib/comandos-voz";
 
 import { ListaAmostras } from "@/components/lista-amostras";
@@ -836,6 +838,10 @@ function AppPage() {
     descricao: string;
   } | null>(null);
 
+  const [sugestoes, setSugestoes] = useState<SugestaoComando[]>([]);
+  const ultimaFraseRef = useRef("");
+  const falhasSeguidasRef = useRef(0);
+
   const accoesRef = useRef({
     otimizarTexto,
     guardar,
@@ -1018,6 +1024,28 @@ function AppPage() {
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
       if (!isFinal) return;
 
+      ultimaFraseRef.current = transcript;
+
+      // Se há sugestões pendentes, "sim" confirma a primeira; "não" descarta.
+      if (sugestoes.length > 0) {
+        const t = transcript.toLowerCase().trim();
+        if (/^(sim|confirmar|yes|ok)$/.test(t)) {
+          const s = sugestoes[0];
+          if (s) {
+            setSugestoes([]);
+            falhasSeguidasRef.current = 0;
+            executar(s.comando);
+          }
+          return;
+        }
+        if (/^(nao|cancelar|não|nope)$/.test(t)) {
+          setSugestoes([]);
+          falhasSeguidasRef.current = 0;
+          toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
+          return;
+        }
+      }
+
       const corpo = extrairComando(transcript);
 
       // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
@@ -1071,9 +1099,32 @@ function AppPage() {
       const comando = interpretarComando(corpo);
       if (!comando) {
         if (aGravarRef.current) return; // ditado em curso: ignorar ruído
+
+        const sugestoesOuvidas = sugerirComandos(corpo);
+        const primeira = sugestoesOuvidas[0];
+        if (primeira && primeira.score >= 0.9) {
+          falhasSeguidasRef.current = 0;
+          executar(primeira.comando);
+          return;
+        }
+        if (sugestoesOuvidas.some((s) => s.score >= 0.6)) {
+          setSugestoes(sugestoesOuvidas.filter((s) => s.score >= 0.6));
+          toast.info("Não percebi bem. Queria um destes comandos?");
+          return;
+        }
+
+        falhasSeguidasRef.current += 1;
         toast.error(`Comando não reconhecido: "${corpo}"`);
+        if (falhasSeguidasRef.current >= 2) {
+          setAjudaVoz(true);
+          toast.info("Abri a lista de comandos para ajudar.");
+          falhasSeguidasRef.current = 0;
+        }
         return;
       }
+
+      falhasSeguidasRef.current = 0;
+      setSugestoes([]);
 
       // Durante a gravação o microfone pertence ao ditado:
       // só se aceita parar.
@@ -1084,11 +1135,24 @@ function AppPage() {
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
+        setSugestoes([]);
+        falhasSeguidasRef.current = 0;
+        return;
+      }
+
+      if (comando.tipo === "repetir") {
+        if (ultimaFraseRef.current) {
+          toast.info(`Última frase ouvida: "${ultimaFraseRef.current}". Pode dizer de novo.`);
+        } else {
+          toast.info("Não há nenhuma frase para repetir.");
+        }
+        setSugestoes([]);
         return;
       }
 
       if (comando.tipo === "cancelar") {
         setPendente(null);
+        setSugestoes([]);
         toast.info("Acção cancelada.");
         return;
       }
@@ -1116,7 +1180,7 @@ function AppPage() {
 
       executar(comando);
     },
-    [executar, irParaCampo, sairModoResumo],
+    [executar, irParaCampo, sairModoResumo, sugestoes, setSugestoes, setAjudaVoz],
   );
 
   const {
@@ -1191,6 +1255,12 @@ function AppPage() {
                   ? `${PERGUNTAS_RESUMO[campoResumo].pergunta} (${PERGUNTAS_RESUMO[campoResumo].exemplos})`
                   : null
               }
+              sugestoes={sugestoes}
+              onSugestao={(c) => {
+                setSugestoes([]);
+                falhasSeguidasRef.current = 0;
+                executar(c);
+              }}
             />
 
             <RecorderPanel
