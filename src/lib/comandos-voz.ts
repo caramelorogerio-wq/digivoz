@@ -33,7 +33,8 @@ export type Comando =
   | { tipo: "sair" }
   | { tipo: "ajuda" }
   | { tipo: "confirmar" }
-  | { tipo: "cancelar" };
+  | { tipo: "cancelar" }
+  | { tipo: "repetir" };
 
 /** Acções que só executam depois de um "confirmar". */
 export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
