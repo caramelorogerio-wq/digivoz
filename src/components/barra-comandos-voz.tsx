@@ -38,6 +38,8 @@ export function BarraComandosVoz({
   aGravar = false,
   vozSuspensa = false,
   perguntaResumo = null,
+  sugestoes = [],
+  onSugestao,
 }: Props) {
 
   const [expandida] = useState(true);
