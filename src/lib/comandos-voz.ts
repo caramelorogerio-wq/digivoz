@@ -23,6 +23,7 @@ export type Comando =
   | { tipo: "ir-amostra"; indice: number }
   | { tipo: "apagar-amostra" }
   | { tipo: "resumo"; resumo: ResumoComando }
+  | { tipo: "resumo-guiado" }
   | { tipo: "separar" }
   | { tipo: "otimizar" }
   | { tipo: "guardar" }
