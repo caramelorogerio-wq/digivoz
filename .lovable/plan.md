@@ -17,7 +17,7 @@ Em `src/routes/_authenticated/app.tsx` (linhas 1071-1076), se o texto depois de 
 ## Notas técnicas
 
 - `src/lib/comandos-voz.ts`: nova função de semelhança (distância de Levenshtein normalizada) sobre as formas canónicas dos comandos; `sugerirComandos(texto): { frase, comando, score }[]` devolvendo o top 3; limiares: ≥0.9 executa directamente, ≥0.6 sugere, abaixo disso só lista genérica.
-- `src/routes/_authenticated/app.tsx`: novo estado `sugestoes` e `confirmacaoSugestao`; o ramo `if (!comando)` passa a alimentar esse estado em vez de apenas um toast; "sim"/"não" tratados antes da interpretação normal quando há sugestão pendente.
+- `src/hooks/use-reconhecimento-voz.ts`: ajuste do timeout de inactividade da API nativa e do intervalo de reinício após `onend` (100 ms), para manter o microfone disponível mais tempo.
 - `src/components/barra-comandos-voz.tsx`: apresentação da frase ouvida e dos botões de sugestão (apenas UI).
 
 Sem alterações à base de dados, à transcrição, à IA, à exportação Word ou ao HL7.
