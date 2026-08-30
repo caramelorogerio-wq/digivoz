@@ -1003,7 +1003,16 @@ function AppPage() {
       default:
         break;
     }
-  }, []);
+
+    if (
+      c.tipo === "iniciar-gravacao" ||
+      c.tipo === "nova-amostra" ||
+      c.tipo === "ir-amostra" ||
+      c.tipo === "novo-relatorio"
+    ) {
+      sairModoResumo();
+    }
+  }, [irParaCampo, sairModoResumo]);
 
   const tratarFrase = useCallback(
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
