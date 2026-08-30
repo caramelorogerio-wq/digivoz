@@ -11,10 +11,12 @@ type Props = {
 
 /** Controlo imperativo usado pelos comandos de voz. */
 export type RecorderHandle = {
-  iniciar: () => void;
-  parar: () => void;
+  /** Devolve true quando a gravação arrancou mesmo. */
+  iniciar: () => Promise<boolean>;
+  parar: () => boolean;
   aGravar: () => boolean;
 };
+
 
 
 const formatFromMime = (mime: string) => {
