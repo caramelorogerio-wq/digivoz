@@ -574,6 +574,7 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, guardar", faz: "Guarda o relatório" },
   { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
   { dizer: "App, copiar", faz: "Copia o texto" },
+  { dizer: "App, repetir", faz: "Repete a última frase ouvida" },
   { dizer: "App, novo relatório", faz: "Limpa tudo (confirmar)" },
   { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
   { dizer: "App, ajuda", faz: "Mostra esta lista" },
