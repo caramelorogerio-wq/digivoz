@@ -471,7 +471,28 @@ export async function gerarRelatorioDocx({
             return corpoAmostra(amostra, indice, primeiro);
           }),
 
-
+          new Paragraph({
+            spacing: { before: 360, after: 80 },
+            children: [
+              new TextRun({
+                text:
+                  lista.length > 1
+                    ? "Códigos de facturação"
+                    : "Código de facturação",
+                bold: true,
+                size: 26,
+                font: "Century Gothic",
+              }),
+            ],
+          }),
+          tabelaFaturacao(
+            lista.map((amostra, indice): [string, string] => [
+              varias
+                ? amostra.titulo.trim() || `Amostra ${indice + 1}`
+                : "Código",
+              amostra.resumo.codigoFaturacao,
+            ]),
+          ),
         ],
       },
     ],
