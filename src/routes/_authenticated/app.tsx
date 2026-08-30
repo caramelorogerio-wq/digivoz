@@ -407,15 +407,23 @@ function AppPage() {
         return;
       }
 
-      const alvo = amostraActiva.id;
+      // A amostra fixada quando a gravação começou tem prioridade.
+      const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
+      alvoGravacaoRef.current = null;
+
+      const destino =
+        amostrasRef.current.find((a) => a.id === alvoId) ?? amostraActiva;
+
+      const alvo = destino.id;
 
       actualizarAmostra(alvo, {
-        texto: amostraActiva.texto
-          ? `${amostraActiva.texto}\n\n${resultado.text}`
+        texto: destino.texto
+          ? `${destino.texto}\n\n${resultado.text}`
           : resultado.text,
       });
 
       setActivaId(alvo);
+
 
       toast.success(
         "Transcrição concluída.",
