@@ -1180,7 +1180,7 @@ function AppPage() {
 
       executar(comando);
     },
-    [executar, irParaCampo, sairModoResumo],
+    [executar, irParaCampo, sairModoResumo, sugestoes, setSugestoes, setAjudaVoz],
   );
 
   const {
