@@ -53,6 +53,7 @@ const NUMEROS: Record<string, number> = {
   quatro: 4,
   cinco: 5,
   seis: 6,
+  meia: 6,
   sete: 7,
   oito: 8,
   nove: 9,
@@ -61,13 +62,36 @@ const NUMEROS: Record<string, number> = {
   doze: 12,
   treze: 13,
   catorze: 14,
+  quatorze: 14,
   quinze: 15,
   dezasseis: 16,
+  dezesseis: 16,
   dezassete: 17,
+  dezessete: 17,
   dezoito: 18,
   dezanove: 19,
+  dezenove: 19,
   vinte: 20,
+  trinta: 30,
+  quarenta: 40,
+  cinquenta: 50,
+  sessenta: 60,
+  setenta: 70,
+  oitenta: 80,
+  noventa: 90,
+  cem: 100,
+  cento: 100,
+  duzentos: 200,
+  trezentos: 300,
+  quatrocentos: 400,
+  quinhentos: 500,
+  seiscentos: 600,
+  setecentos: 700,
+  oitocentos: 800,
+  novecentos: 900,
+  mil: 1000,
 };
+
 
 const LETRAS_DITADAS: Record<string, string> = {
   alfa: "A",
@@ -98,7 +122,44 @@ const LETRAS_DITADAS: Record<string, string> = {
   xray: "X",
   yankee: "Y",
   zulu: "Z",
+
+  // Nomes das letras em português (já normalizados, sem acentos).
+  be: "B",
+  ce: "C",
+  de: "D",
+  efe: "F",
+  ge: "G",
+  je: "G",
+  aga: "H",
+  aca: "H",
+  jota: "J",
+  capa: "K",
+  ka: "K",
+  ele: "L",
+  eme: "M",
+  ene: "N",
+  pe: "P",
+  que: "Q",
+  erre: "R",
+  esse: "S",
+  te: "T",
+  ve: "V",
+  dablio: "W",
+  dabliu: "W",
+  xis: "X",
+  ipsilon: "Y",
+  ze: "Z",
 };
+
+/** Separadores que podem ser ditados dentro de um código. */
+const SEPARADORES: Record<string, string> = {
+  traco: "-",
+  hifen: "-",
+  menos: "-",
+  barra: "/",
+  ponto: ".",
+};
+
 
 export const normalizar = (frase: string) =>
   frase
@@ -138,28 +199,74 @@ const numeroDe = (palavra: string | undefined): number | undefined => {
   return NUMEROS[palavra];
 };
 
-/** "c dois seis h zero zero" → "C26H00" (leitura soletrada do código de barras). */
+/**
+ * Converte a leitura soletrada de um código em texto.
+ *
+ * "cê vinte e seis agá zero zero zero zero" → "C26H0000"
+ * "dê eme pê traço zero zero um"            → "DMP-001"
+ */
 function juntarCodigo(texto: string): string {
   const partes = texto.split(" ").filter(Boolean);
+
   let saida = "";
+  let pendente: number | null = null;
+
+  const descarregar = () => {
+    if (pendente !== null) {
+      saida += String(pendente);
+      pendente = null;
+    }
+  };
 
   for (const p of partes) {
+    // "vinte e seis" — o "e" liga dois números, senão é ignorado.
+    if (p === "e") continue;
+
+    if (p === "espaco") {
+      descarregar();
+      continue;
+    }
+
+    if (p in SEPARADORES) {
+      descarregar();
+      saida += SEPARADORES[p];
+      continue;
+    }
+
     if (/^\d+$/.test(p)) {
+      descarregar();
       saida += p;
       continue;
     }
-    if (p in NUMEROS) {
-      saida += String(NUMEROS[p]);
+
+    const valor = NUMEROS[p];
+
+    if (valor !== undefined) {
+      if (
+        pendente !== null &&
+        pendente >= 20 &&
+        pendente % 10 === 0 &&
+        valor < pendente
+      ) {
+        pendente += valor;
+      } else {
+        descarregar();
+        pendente = valor;
+      }
       continue;
     }
-    if (p in LETRAS_DITADAS) {
-      saida += LETRAS_DITADAS[p];
-      continue;
-    }
-    saida += p.toUpperCase();
+
+    descarregar();
+
+    const letra = LETRAS_DITADAS[p];
+    saida += letra ?? p.toUpperCase();
   }
-  return saida;
+
+  descarregar();
+
+  return saida.replace(/\s+/g, "").toUpperCase();
 }
+
 
 function lerResumo(texto: string): ResumoComando | null {
   const resumo: ResumoComando = {};
@@ -199,7 +306,7 @@ export function interpretarComando(texto: string): Comando | null {
     return { tipo: "ajuda" };
 
   const analise = t.match(
-    /^(?:numero (?:da )?analise|n(?:umero)? analise|analise)\s+(.+)$/,
+    /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
   if (analise?.[1]) {
     const valor = juntarCodigo(analise[1]);
@@ -254,6 +361,15 @@ export function interpretarComando(texto: string): Comando | null {
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, análise C26H0000", faz: "Preenche o n.º da análise" },
+  {
+    dizer: "App, análise cê vinte e seis agá zero zero zero zero",
+    faz: "Mesmo código, ditado letra a letra (C26H0000)",
+  },
+  {
+    dizer: "App, análise dê eme pê traço zero zero um",
+    faz: "Códigos com traço ou barra (DMP-001)",
+  },
+
   { dizer: "App, iniciar gravação", faz: "Começa a gravar" },
   { dizer: "App, parar", faz: "Pára e transcreve" },
   { dizer: "App, nova amostra", faz: "Cria uma amostra" },
