@@ -1019,6 +1019,53 @@ function AppPage() {
       if (!isFinal) return;
 
       const corpo = extrairComando(transcript);
+
+      // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
+      const campo = campoResumoRef.current;
+      if (campo && !aGravarRef.current && corpo === null) {
+        const r = interpretarRespostaResumo(campo, transcript);
+        if (!r) {
+          toast.error(
+            `Não percebi. ${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+
+        const indice = CAMPOS_RESUMO.indexOf(campo);
+
+        if (r.tipo === "sair") {
+          sairModoResumo();
+          toast.info("Resumo técnico terminado.");
+          return;
+        }
+        if (r.tipo === "repetir") {
+          toast.info(
+            `${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
+          );
+          return;
+        }
+        if (r.tipo === "voltar") {
+          irParaCampo(CAMPOS_RESUMO[Math.max(0, indice - 1)]);
+          return;
+        }
+
+        if (r.tipo === "valor") {
+          const a = accoesRef.current;
+          a.actualizarAmostra(a.amostraActiva.id, {
+            resumo: { ...a.amostraActiva.resumo, ...r.resumo },
+          });
+        }
+
+        const proximo = CAMPOS_RESUMO[indice + 1] ?? null;
+        if (proximo) {
+          irParaCampo(proximo);
+        } else {
+          sairModoResumo();
+          toast.success("Resumo técnico preenchido.");
+        }
+        return;
+      }
+
       if (corpo === null) return; // ditado normal
 
       const comando = interpretarComando(corpo);
