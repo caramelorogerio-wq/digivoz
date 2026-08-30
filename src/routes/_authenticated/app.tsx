@@ -856,15 +856,46 @@ function AppPage() {
         toast.success(`N.º da análise: ${c.valor}`);
         break;
 
-      case "iniciar-gravacao":
-        recorderRef.current?.iniciar();
-        toast.success("A gravar…");
-        break;
+      case "iniciar-gravacao": {
+        // Fixa a amostra destino antes de arrancar, e só anuncia
+        // "A gravar" quando o gravador arrancou mesmo.
+        alvoGravacaoRef.current = a.amostraActiva.id;
 
-      case "parar-gravacao":
-        recorderRef.current?.parar();
-        toast.success("Gravação terminada.");
+        void (async () => {
+          let ok = (await recorderRef.current?.iniciar()) ?? false;
+
+          if (!ok) {
+            // Microfone possivelmente ocupado pela escuta de comandos:
+            // liberta-o e tenta uma segunda vez.
+            setVozSuspensa(true);
+            await new Promise((r) => window.setTimeout(r, 400));
+            ok = (await recorderRef.current?.iniciar()) ?? false;
+          }
+
+          if (!ok) {
+            alvoGravacaoRef.current = null;
+            setVozSuspensa(false);
+            toast.error(
+              recorderRef.current?.erro() ??
+                "Não foi possível iniciar a gravação.",
+            );
+            return;
+          }
+
+          toast.success("A gravar — diga \"App, parar\".");
+        })();
         break;
+      }
+
+      case "parar-gravacao": {
+        const parou = recorderRef.current?.parar() ?? false;
+        setVozSuspensa(false);
+        toast[parou ? "success" : "info"](
+          parou ? "Gravação terminada." : "Não havia gravação em curso.",
+        );
+        break;
+      }
+
 
       case "nova-amostra":
         a.adicionarAmostra();
