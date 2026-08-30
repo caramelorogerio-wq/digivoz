@@ -28,8 +28,10 @@ import {
   extrairComando,
   interpretarComando,
   interpretarRespostaResumo,
+  sugerirComandos,
   type CampoResumo,
   type Comando,
+  type SugestaoComando,
 } from "@/lib/comandos-voz";
 
 import { ListaAmostras } from "@/components/lista-amostras";
