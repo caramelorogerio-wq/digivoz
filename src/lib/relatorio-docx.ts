@@ -141,6 +141,39 @@ const tabelaResumo = (campos: [string, string][]) => {
   });
 };
 
+const celulaTexto = (texto: string, negrito = false) =>
+  new TableCell({
+    width: { size: COLUNA, type: WidthType.DXA },
+    borders: SEM_BORDAS,
+    margins: { top: 20, bottom: 20, left: 0, right: 120 },
+    children: [
+      new Paragraph({
+        spacing: { after: 0 },
+        children: [
+          new TextRun({
+            text: texto,
+            bold: negrito,
+            font: "Century Gothic",
+            size: 20,
+          }),
+        ],
+      }),
+    ],
+  });
+
+/** Quadro final com os códigos de facturação de cada amostra. */
+const tabelaFaturacao = (entradas: [string, string][]) =>
+  new Table({
+    width: { size: LARGURA_UTIL, type: WidthType.DXA },
+    columnWidths: [COLUNA, COLUNA],
+    borders: SEM_BORDAS,
+    rows: entradas.map(([nome, codigo]) =>
+      new TableRow({
+        children: [celulaTexto(nome, true), celulaTexto(codigo)],
+      }),
+    ),
+  });
+
 /** "1 a 3", "4 a 6", "4" (bloco único) ou "0". */
 export const intervaloBlocos = (inicio: number, quantidade: number) => {
   if (quantidade <= 0) return "0";
@@ -268,9 +301,6 @@ export async function gerarRelatorioDocx({
     );
 
     const campos: [string, string][] = [
-      ...(varias
-        ? []
-        : ([["N.º da análise", titulo]] as [string, string][])),
       ["N.º de fragmentos", String(amostra.resumo.fragmentos)],
       [
         "N.º de blocos",
@@ -281,7 +311,6 @@ export async function gerarRelatorioDocx({
         "Inclusão",
         amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
       ],
-      ["Código de faturação", amostra.resumo.codigoFaturacao],
     ];
 
     paragrafos.push(
@@ -442,7 +471,28 @@ export async function gerarRelatorioDocx({
             return corpoAmostra(amostra, indice, primeiro);
           }),
 
-
+          new Paragraph({
+            spacing: { before: 360, after: 80 },
+            children: [
+              new TextRun({
+                text:
+                  lista.length > 1
+                    ? "Códigos de facturação"
+                    : "Código de facturação",
+                bold: true,
+                size: 26,
+                font: "Century Gothic",
+              }),
+            ],
+          }),
+          tabelaFaturacao(
+            lista.map((amostra, indice): [string, string] => [
+              varias
+                ? amostra.titulo.trim() || `Amostra ${indice + 1}`
+                : "Código",
+              amostra.resumo.codigoFaturacao,
+            ]),
+          ),
         ],
       },
     ],
