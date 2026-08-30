@@ -1100,14 +1100,15 @@ function AppPage() {
       if (!comando) {
         if (aGravarRef.current) return; // ditado em curso: ignorar ruído
 
-        const sugestoes = sugerirComandos(corpo);
-        if (sugestoes[0]?.score >= 0.9) {
+        const sugestoesOuvidas = sugerirComandos(corpo);
+        const primeira = sugestoesOuvidas[0];
+        if (primeira && primeira.score >= 0.9) {
           falhasSeguidasRef.current = 0;
-          executar(sugestoes[0].comando);
+          executar(primeira.comando);
           return;
         }
-        if (sugestoes.some((s) => s.score >= 0.6)) {
-          setSugestoes(sugestoes.filter((s) => s.score >= 0.6));
+        if (sugestoesOuvidas.some((s) => s.score >= 0.6)) {
+          setSugestoes(sugestoesOuvidas.filter((s) => s.score >= 0.6));
           toast.info("Não percebi bem. Queria um destes comandos?");
           return;
         }
