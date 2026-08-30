@@ -466,9 +466,15 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
   { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
   {
-    dizer: "App, resumo técnico 3 fragmentos 2 blocos seccionado total",
-    faz: "Preenche o resumo técnico",
+    dizer: "App, resumo técnico",
+    faz: "Entra no quadro e pergunta campo a campo",
   },
+  {
+    dizer: "3 fragmentos · 2 blocos · seccionado · total · 31077",
+    faz: "Respostas curtas dentro do modo guiado (sem dizer “App”)",
+  },
+  { dizer: "saltar / voltar / repetir / sair", faz: "Navegar no modo guiado" },
+  { dizer: "App, 3 fragmentos", faz: "Atalho directo, sem modo guiado" },
   { dizer: "App, otimizar", faz: "Otimiza o relatório com IA" },
   { dizer: "App, guardar", faz: "Guarda o relatório" },
   { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
