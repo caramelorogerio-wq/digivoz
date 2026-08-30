@@ -790,7 +790,11 @@ function AppPage() {
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
   const [aGravar, setAGravar] = useState(false);
-  void aGravar;
+  /** Suspende a escuta de comandos (microfone reservado ao gravador). */
+  const [vozSuspensa, setVozSuspensa] = useState(false);
+  const aGravarRef = useRef(false);
+  aGravarRef.current = aGravar;
+
 
   const [pendente, setPendente] = useState<{
     comando: Comando;
