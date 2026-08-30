@@ -31,6 +31,7 @@ import {
 import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
+import { ExportarHL7 } from "@/components/exportar-hl7";
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   type Amostra,
