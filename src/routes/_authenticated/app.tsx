@@ -22,9 +22,13 @@ import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel"
 import { BarraComandosVoz } from "@/components/barra-comandos-voz";
 import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
 import {
+  CAMPOS_RESUMO,
   COMANDOS_DESTRUTIVOS,
+  PERGUNTAS_RESUMO,
   extrairComando,
   interpretarComando,
+  interpretarRespostaResumo,
+  type CampoResumo,
   type Comando,
 } from "@/lib/comandos-voz";
 
