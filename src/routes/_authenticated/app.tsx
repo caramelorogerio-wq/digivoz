@@ -795,6 +795,20 @@ function AppPage() {
   const aGravarRef = useRef(false);
   aGravarRef.current = aGravar;
 
+  const tratarEstadoGravacao = useCallback((activa: boolean) => {
+    setAGravar(activa);
+    aGravarRef.current = activa;
+    if (activa) {
+      // Gravação iniciada pelo botão: fixa a amostra activa como destino.
+      if (!alvoGravacaoRef.current) {
+        alvoGravacaoRef.current = accoesRef.current.amostraActiva.id;
+      }
+    } else {
+      setVozSuspensa(false);
+    }
+  }, []);
+
+
 
   const [pendente, setPendente] = useState<{
     comando: Comando;
