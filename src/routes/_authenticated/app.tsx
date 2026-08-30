@@ -1116,7 +1116,7 @@ function AppPage() {
 
       executar(comando);
     },
-    [executar],
+    [executar, irParaCampo, sairModoResumo],
   );
 
   const {
@@ -1186,6 +1186,11 @@ function AppPage() {
               onAjudaChange={setAjudaVoz}
               aGravar={aGravar}
               vozSuspensa={vozSuspensa}
+              perguntaResumo={
+                campoResumo
+                  ? `${PERGUNTAS_RESUMO[campoResumo].pergunta} (${PERGUNTAS_RESUMO[campoResumo].exemplos})`
+                  : null
+              }
             />
 
             <RecorderPanel
@@ -1354,6 +1359,7 @@ function AppPage() {
               </div>
 
               <ListaAmostras
+              campoResumoActivo={campoResumo}
                 amostras={amostras}
                 activaId={amostraActiva.id}
                 onActivar={setActivaId}
