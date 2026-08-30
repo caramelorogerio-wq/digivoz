@@ -268,9 +268,6 @@ export async function gerarRelatorioDocx({
     );
 
     const campos: [string, string][] = [
-      ...(varias
-        ? []
-        : ([["N.º da análise", titulo]] as [string, string][])),
       ["N.º de fragmentos", String(amostra.resumo.fragmentos)],
       [
         "N.º de blocos",
@@ -281,7 +278,6 @@ export async function gerarRelatorioDocx({
         "Inclusão",
         amostra.resumo.inclusao === "total" ? "Total" : "Com reserva",
       ],
-      ["Código de faturação", amostra.resumo.codigoFaturacao],
     ];
 
     paragrafos.push(
