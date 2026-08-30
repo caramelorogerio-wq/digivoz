@@ -437,10 +437,11 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(terminar sessao|sair|fechar sessao|logout)$/.test(t))
     return { tipo: "sair" };
 
-  if (/^resumo tecnico\b/.test(t) || /\b(fragmentos?|blocos?)\b/.test(t)) {
-    const resumo = lerResumo(t);
-    if (resumo) return { tipo: "resumo", resumo };
-  }
+  if (/^(resumo|resumo tecnico|preencher resumo|preencher resumo tecnico)$/.test(t))
+    return { tipo: "resumo-guiado" };
+
+  const atalho = lerAtalhoResumo(t);
+  if (atalho) return { tipo: "resumo", resumo: atalho };
 
   return null;
 }
