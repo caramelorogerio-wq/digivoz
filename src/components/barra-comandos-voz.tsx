@@ -13,7 +13,12 @@ type Props = {
   onAlternar: (activo: boolean) => void;
   ajudaAberta: boolean;
   onAjudaChange: (aberta: boolean) => void;
+  /** Gravação de ditado em curso. */
+  aGravar?: boolean;
+  /** Escuta de comandos suspensa (parar só pelo botão). */
+  vozSuspensa?: boolean;
 };
+
 
 export function BarraComandosVoz({
   activo,
