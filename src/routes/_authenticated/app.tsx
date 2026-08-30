@@ -838,6 +838,10 @@ function AppPage() {
     descricao: string;
   } | null>(null);
 
+  const [sugestoes, setSugestoes] = useState<SugestaoComando[]>([]);
+  const ultimaFraseRef = useRef("");
+  const falhasSeguidasRef = useRef(0);
+
   const accoesRef = useRef({
     otimizarTexto,
     guardar,
