@@ -960,6 +960,10 @@ function AppPage() {
         toast.success("Resumo técnico actualizado.");
         break;
 
+      case "resumo-guiado":
+        irParaCampo(CAMPOS_RESUMO[0]);
+        break;
+
       case "separar":
         void a.separarAmostras(
           a.amostraActiva.id,
