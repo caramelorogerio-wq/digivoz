@@ -406,7 +406,7 @@ function semelhanca(a: string, b: string): number {
     }
   }
 
-  const dist = dp[n];
+  const dist = dp[n] ?? 0;
   return 1 - dist / Math.max(m, n);
 }
 
