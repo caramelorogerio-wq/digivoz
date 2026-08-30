@@ -1326,6 +1326,13 @@ function AppPage() {
                   Exportar Word (.docx)
                 </Button>
 
+                <ExportarHL7
+                  numeroAnalise={numeroAnalise}
+                  amostras={amostras}
+                  instituicao={instituicao}
+                  servico={servico}
+                />
+
                 <Button
                   variant="outline"
                   className="gap-2"
