@@ -1090,11 +1090,26 @@ function AppPage() {
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
+        setSugestoes([]);
+        falhasSeguidasRef.current = 0;
+        return;
+      }
+
+      if (comando.tipo === "repetir") {
+        if (ultimaFraseRef.current) {
+          toast.info(`Repetir: "${ultimaFraseRef.current}"`);
+          // Reprocessa a última frase exactamente como se fosse nova.
+          tratarFrase({ transcript: ultimaFraseRef.current, isFinal: true });
+        } else {
+          toast.info("Não há nenhuma frase para repetir.");
+        }
+        setSugestoes([]);
         return;
       }
 
       if (comando.tipo === "cancelar") {
         setPendente(null);
+        setSugestoes([]);
         toast.info("Acção cancelada.");
         return;
       }
