@@ -15,7 +15,10 @@ export type RecorderHandle = {
   iniciar: () => Promise<boolean>;
   parar: () => boolean;
   aGravar: () => boolean;
+  /** Última mensagem de erro do gravador, se existir. */
+  erro: () => string | null;
 };
+
 
 
 
