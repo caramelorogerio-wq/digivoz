@@ -1089,14 +1089,17 @@ function AppPage() {
               onAlternar={setMaosLivres}
               ajudaAberta={ajudaVoz}
               onAjudaChange={setAjudaVoz}
+              aGravar={aGravar}
+              vozSuspensa={vozSuspensa}
             />
 
             <RecorderPanel
               ref={recorderRef}
               disabled={aTranscrever}
               onAudio={handleAudio}
-              onEstadoChange={setAGravar}
+              onEstadoChange={tratarEstadoGravacao}
             />
+
 
 
             <Button
