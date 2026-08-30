@@ -11,10 +11,15 @@ type Props = {
 
 /** Controlo imperativo usado pelos comandos de voz. */
 export type RecorderHandle = {
-  iniciar: () => void;
-  parar: () => void;
+  /** Devolve true quando a gravação arrancou mesmo. */
+  iniciar: () => Promise<boolean>;
+  parar: () => boolean;
   aGravar: () => boolean;
+  /** Última mensagem de erro do gravador, se existir. */
+  erro: () => string | null;
 };
+
+
 
 
 const formatFromMime = (mime: string) => {
@@ -50,6 +55,10 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gravandoRef = useRef(false);
+  const erroRef = useRef<string | null>(null);
+  erroRef.current = erro;
+
 
   useEffect(() => {
     onEstadoChange?.(recording);
@@ -62,16 +71,16 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
   }, [recording]);
 
 
-  const iniciar = async () => {
+  const iniciar = async (): Promise<boolean> => {
     setErro(null);
 
     if (typeof window !== "undefined" && !window.isSecureContext) {
       setErro("A gravação exige uma ligação segura (https).");
-      return;
+      return false;
     }
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setErro("Este navegador não suporta gravação de áudio. Use o Edge, Chrome ou Safari actualizado.");
-      return;
+      return false;
     }
 
     try {
@@ -84,6 +93,7 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
       };
       recorder.onerror = () => {
         stream.getTracks().forEach((t) => t.stop());
+        gravandoRef.current = false;
         setRecording(false);
         setErro("A gravação foi interrompida pelo navegador. Tente novamente.");
       };
@@ -98,7 +108,9 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
       recorder.start(1000);
       recorderRef.current = recorder;
       setSeconds(0);
+      gravandoRef.current = true;
       setRecording(true);
+      return true;
     } catch (e) {
       const nome = (e as DOMException | undefined)?.name;
       if (nome === "NotAllowedError" || nome === "SecurityError") {
@@ -112,24 +124,35 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
       } else {
         setErro("Não foi possível aceder ao microfone. Verifique as permissões do navegador.");
       }
+      gravandoRef.current = false;
+      setRecording(false);
+      return false;
     }
   };
 
-  const parar = () => {
-    recorderRef.current?.stop();
+  const parar = (): boolean => {
+    if (!recorderRef.current) {
+      gravandoRef.current = false;
+      setRecording(false);
+      return false;
+    }
+    recorderRef.current.stop();
     recorderRef.current = null;
+    gravandoRef.current = false;
     setRecording(false);
+    return true;
   };
 
   useImperativeHandle(ref, () => ({
-    iniciar: () => {
-      if (!recording) void iniciar();
+    iniciar: async () => {
+      if (gravandoRef.current) return true;
+      return iniciar();
     },
-    parar: () => {
-      if (recording) parar();
-    },
-    aGravar: () => recording,
+    parar: () => (gravandoRef.current ? parar() : false),
+    aGravar: () => gravandoRef.current,
+    erro: () => erroRef.current,
   }));
+
 
 
 

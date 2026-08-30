@@ -151,7 +151,13 @@ function AppPage() {
   const amostraActiva =
     amostras.find((a) => a.id === activaId) ?? amostras[0]!;
 
+  /** Amostra fixada como destino no momento em que a gravação arranca. */
+  const alvoGravacaoRef = useRef<string | null>(null);
+  const amostrasRef = useRef(amostras);
+  amostrasRef.current = amostras;
+
   const texto = textoCompleto(amostras);
+
 
   const actualizarAmostra = (
     id: string,
@@ -407,15 +413,23 @@ function AppPage() {
         return;
       }
 
-      const alvo = amostraActiva.id;
+      // A amostra fixada quando a gravação começou tem prioridade.
+      const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
+      alvoGravacaoRef.current = null;
+
+      const destino =
+        amostrasRef.current.find((a) => a.id === alvoId) ?? amostraActiva;
+
+      const alvo = destino.id;
 
       actualizarAmostra(alvo, {
-        texto: amostraActiva.texto
-          ? `${amostraActiva.texto}\n\n${resultado.text}`
+        texto: destino.texto
+          ? `${destino.texto}\n\n${resultado.text}`
           : resultado.text,
       });
 
       setActivaId(alvo);
+
 
       toast.success(
         "Transcrição concluída.",
@@ -776,7 +790,25 @@ function AppPage() {
   const [maosLivres, setMaosLivres] = useState(false);
   const [ajudaVoz, setAjudaVoz] = useState(false);
   const [aGravar, setAGravar] = useState(false);
-  void aGravar;
+  /** Suspende a escuta de comandos (microfone reservado ao gravador). */
+  const [vozSuspensa, setVozSuspensa] = useState(false);
+  const aGravarRef = useRef(false);
+  aGravarRef.current = aGravar;
+
+  const tratarEstadoGravacao = useCallback((activa: boolean) => {
+    setAGravar(activa);
+    aGravarRef.current = activa;
+    if (activa) {
+      // Gravação iniciada pelo botão: fixa a amostra activa como destino.
+      if (!alvoGravacaoRef.current) {
+        alvoGravacaoRef.current = accoesRef.current.amostraActiva.id;
+      }
+    } else {
+      setVozSuspensa(false);
+    }
+  }, []);
+
+
 
   const [pendente, setPendente] = useState<{
     comando: Comando;
@@ -838,15 +870,46 @@ function AppPage() {
         toast.success(`N.º da análise: ${c.valor}`);
         break;
 
-      case "iniciar-gravacao":
-        recorderRef.current?.iniciar();
-        toast.success("A gravar…");
-        break;
+      case "iniciar-gravacao": {
+        // Fixa a amostra destino antes de arrancar, e só anuncia
+        // "A gravar" quando o gravador arrancou mesmo.
+        alvoGravacaoRef.current = a.amostraActiva.id;
 
-      case "parar-gravacao":
-        recorderRef.current?.parar();
-        toast.success("Gravação terminada.");
+        void (async () => {
+          let ok = (await recorderRef.current?.iniciar()) ?? false;
+
+          if (!ok) {
+            // Microfone possivelmente ocupado pela escuta de comandos:
+            // liberta-o e tenta uma segunda vez.
+            setVozSuspensa(true);
+            await new Promise((r) => window.setTimeout(r, 400));
+            ok = (await recorderRef.current?.iniciar()) ?? false;
+          }
+
+          if (!ok) {
+            alvoGravacaoRef.current = null;
+            setVozSuspensa(false);
+            toast.error(
+              recorderRef.current?.erro() ??
+                "Não foi possível iniciar a gravação.",
+            );
+            return;
+          }
+
+          toast.success("A gravar — diga \"App, parar\".");
+        })();
         break;
+      }
+
+      case "parar-gravacao": {
+        const parou = recorderRef.current?.parar() ?? false;
+        setVozSuspensa(false);
+        toast[parou ? "success" : "info"](
+          parou ? "Gravação terminada." : "Não havia gravação em curso.",
+        );
+        break;
+      }
+
 
       case "nova-amostra":
         a.adicionarAmostra();
@@ -926,9 +989,17 @@ function AppPage() {
 
       const comando = interpretarComando(corpo);
       if (!comando) {
+        if (aGravarRef.current) return; // ditado em curso: ignorar ruído
         toast.error(`Comando não reconhecido: "${corpo}"`);
         return;
       }
+
+      // Durante a gravação o microfone pertence ao ditado:
+      // só se aceita parar.
+      if (aGravarRef.current && comando.tipo !== "parar-gravacao") {
+        return;
+      }
+
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
@@ -973,12 +1044,14 @@ function AppPage() {
     ultima,
   } = useReconhecimentoVoz({
     activo: maosLivres,
+    suspenso: vozSuspensa,
     onFrase: tratarFrase,
     onErro: (m) => {
       toast.error(m);
       setMaosLivres(false);
     },
   });
+
 
   const palavras = contarPalavras(texto);
 
@@ -1030,14 +1103,17 @@ function AppPage() {
               onAlternar={setMaosLivres}
               ajudaAberta={ajudaVoz}
               onAjudaChange={setAjudaVoz}
+              aGravar={aGravar}
+              vozSuspensa={vozSuspensa}
             />
 
             <RecorderPanel
               ref={recorderRef}
               disabled={aTranscrever}
               onAudio={handleAudio}
-              onEstadoChange={setAGravar}
+              onEstadoChange={tratarEstadoGravacao}
             />
+
 
 
             <Button

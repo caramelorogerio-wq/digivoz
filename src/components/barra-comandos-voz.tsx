@@ -13,7 +13,12 @@ type Props = {
   onAlternar: (activo: boolean) => void;
   ajudaAberta: boolean;
   onAjudaChange: (aberta: boolean) => void;
+  /** Gravação de ditado em curso. */
+  aGravar?: boolean;
+  /** Escuta de comandos suspensa (parar só pelo botão). */
+  vozSuspensa?: boolean;
 };
+
 
 export function BarraComandosVoz({
   activo,
@@ -24,7 +29,10 @@ export function BarraComandosVoz({
   onAlternar,
   ajudaAberta,
   onAjudaChange,
+  aGravar = false,
+  vozSuspensa = false,
 }: Props) {
+
   const [expandida] = useState(true);
 
   return (
@@ -71,21 +79,30 @@ export function BarraComandosVoz({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span
               className={`inline-block size-2 rounded-full ${
-                aEscutar ? "animate-pulse bg-clinical" : "bg-border"
+                aGravar
+                  ? "animate-pulse bg-destructive"
+                  : aEscutar
+                    ? "animate-pulse bg-clinical"
+                    : "bg-border"
               }`}
             />
-            {activo
-              ? aEscutar
-                ? "À escuta de comandos"
-                : "A retomar a escuta…"
-              : "Comandos desligados"}
+            {aGravar
+              ? vozSuspensa
+                ? "A gravar — use o botão Parar Gravação"
+                : 'A gravar — diga "App, parar"'
+              : activo
+                ? aEscutar
+                  ? "À escuta de comandos"
+                  : "A retomar a escuta…"
+                : "Comandos desligados"}
           </div>
 
-          {activo && ultima && (
+          {activo && !aGravar && ultima && (
             <p className="truncate rounded-md border border-border bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
               Ouvido: {ultima}
             </p>
           )}
+
 
           {pendente && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">

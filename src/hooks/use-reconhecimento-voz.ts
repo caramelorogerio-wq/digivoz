@@ -32,21 +32,24 @@ const obterConstrutor = (): (new () => ReconhecimentoLike) | null => {
 
 export function useReconhecimentoVoz(opts: {
   activo: boolean;
+  /** Pausa temporária (ex.: enquanto o gravador usa o microfone). */
+  suspenso?: boolean;
   onFrase: (r: Resultado) => void;
   onErro?: (mensagem: string) => void;
 }) {
-  const { activo, onFrase, onErro } = opts;
+  const { activo, suspenso = false, onFrase, onErro } = opts;
+  const ligado = activo && !suspenso;
 
   const [suportado, setSuportado] = useState(false);
   const [aEscutar, setAEscutar] = useState(false);
   const [ultima, setUltima] = useState("");
 
   const refInstancia = useRef<ReconhecimentoLike | null>(null);
-  const refActivo = useRef(activo);
+  const refActivo = useRef(ligado);
   const refFrase = useRef(onFrase);
   const refErro = useRef(onErro);
 
-  refActivo.current = activo;
+  refActivo.current = ligado;
   refFrase.current = onFrase;
   refErro.current = onErro;
 
@@ -62,7 +65,7 @@ export function useReconhecimentoVoz(opts: {
   }, []);
 
   useEffect(() => {
-    if (!activo) {
+    if (!ligado) {
       refInstancia.current?.abort();
       refInstancia.current = null;
       setAEscutar(false);
@@ -71,6 +74,7 @@ export function useReconhecimentoVoz(opts: {
 
     const Ctor = obterConstrutor();
     if (!Ctor) return;
+
 
     let cancelado = false;
     const instancia = new Ctor();
@@ -136,7 +140,7 @@ export function useReconhecimentoVoz(opts: {
       if (refInstancia.current === instancia) refInstancia.current = null;
       setAEscutar(false);
     };
-  }, [activo]);
+  }, [ligado]);
 
   return { suportado, aEscutar, ultima, parar };
 }
