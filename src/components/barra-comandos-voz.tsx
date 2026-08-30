@@ -29,7 +29,10 @@ export function BarraComandosVoz({
   onAlternar,
   ajudaAberta,
   onAjudaChange,
+  aGravar = false,
+  vozSuspensa = false,
 }: Props) {
+
   const [expandida] = useState(true);
 
   return (
