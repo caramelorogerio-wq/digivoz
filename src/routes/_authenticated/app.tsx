@@ -1255,6 +1255,12 @@ function AppPage() {
                   ? `${PERGUNTAS_RESUMO[campoResumo].pergunta} (${PERGUNTAS_RESUMO[campoResumo].exemplos})`
                   : null
               }
+              sugestoes={sugestoes}
+              onSugestao={(c) => {
+                setSugestoes([]);
+                falhasSeguidasRef.current = 0;
+                executar(c);
+              }}
             />
 
             <RecorderPanel
