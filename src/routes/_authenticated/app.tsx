@@ -1024,6 +1024,28 @@ function AppPage() {
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
       if (!isFinal) return;
 
+      ultimaFraseRef.current = transcript;
+
+      // Se há sugestões pendentes, "sim" confirma a primeira; "não" descarta.
+      if (sugestoes.length > 0) {
+        const t = transcript.toLowerCase().trim();
+        if (/^(sim|confirmar|yes|ok)$/.test(t)) {
+          const s = sugestoes[0];
+          if (s) {
+            setSugestoes([]);
+            falhasSeguidasRef.current = 0;
+            executar(s.comando);
+          }
+          return;
+        }
+        if (/^(nao|cancelar|não|nope)$/.test(t)) {
+          setSugestoes([]);
+          falhasSeguidasRef.current = 0;
+          toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
+          return;
+        }
+      }
+
       const corpo = extrairComando(transcript);
 
       // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
@@ -1077,9 +1099,31 @@ function AppPage() {
       const comando = interpretarComando(corpo);
       if (!comando) {
         if (aGravarRef.current) return; // ditado em curso: ignorar ruído
+
+        const sugestoes = sugerirComandos(corpo);
+        if (sugestoes[0]?.score >= 0.9) {
+          falhasSeguidasRef.current = 0;
+          executar(sugestoes[0].comando);
+          return;
+        }
+        if (sugestoes.some((s) => s.score >= 0.6)) {
+          setSugestoes(sugestoes.filter((s) => s.score >= 0.6));
+          toast.info("Não percebi bem. Queria um destes comandos?");
+          return;
+        }
+
+        falhasSeguidasRef.current += 1;
         toast.error(`Comando não reconhecido: "${corpo}"`);
+        if (falhasSeguidasRef.current >= 2) {
+          setAjudaVoz(true);
+          toast.info("Abri a lista de comandos para ajudar.");
+          falhasSeguidasRef.current = 0;
+        }
         return;
       }
+
+      falhasSeguidasRef.current = 0;
+      setSugestoes([]);
 
       // Durante a gravação o microfone pertence ao ditado:
       // só se aceita parar.
