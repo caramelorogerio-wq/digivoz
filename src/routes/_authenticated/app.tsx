@@ -1030,12 +1030,14 @@ function AppPage() {
     ultima,
   } = useReconhecimentoVoz({
     activo: maosLivres,
+    suspenso: vozSuspensa,
     onFrase: tratarFrase,
     onErro: (m) => {
       toast.error(m);
       setMaosLivres(false);
     },
   });
+
 
   const palavras = contarPalavras(texto);
 
