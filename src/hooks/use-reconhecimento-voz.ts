@@ -140,7 +140,7 @@ export function useReconhecimentoVoz(opts: {
       if (refInstancia.current === instancia) refInstancia.current = null;
       setAEscutar(false);
     };
-  }, [activo]);
+  }, [ligado]);
 
   return { suportado, aEscutar, ultima, parar };
 }
