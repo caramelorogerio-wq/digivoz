@@ -975,9 +975,17 @@ function AppPage() {
 
       const comando = interpretarComando(corpo);
       if (!comando) {
+        if (aGravarRef.current) return; // ditado em curso: ignorar ruído
         toast.error(`Comando não reconhecido: "${corpo}"`);
         return;
       }
+
+      // Durante a gravação o microfone pertence ao ditado:
+      // só se aceita parar.
+      if (aGravarRef.current && comando.tipo !== "parar-gravacao") {
+        return;
+      }
+
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
