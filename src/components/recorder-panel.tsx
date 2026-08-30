@@ -52,6 +52,10 @@ export const RecorderPanel = forwardRef<RecorderHandle, Props>(
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const gravandoRef = useRef(false);
+  const erroRef = useRef<string | null>(null);
+  erroRef.current = erro;
+
 
   useEffect(() => {
     onEstadoChange?.(recording);
