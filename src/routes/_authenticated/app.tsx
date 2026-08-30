@@ -1045,7 +1045,7 @@ function AppPage() {
           return;
         }
         if (r.tipo === "voltar") {
-          irParaCampo(CAMPOS_RESUMO[Math.max(0, indice - 1)]);
+          irParaCampo(CAMPOS_RESUMO[Math.max(0, indice - 1)] ?? campo);
           return;
         }
 
