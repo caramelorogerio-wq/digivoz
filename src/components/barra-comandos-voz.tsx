@@ -121,6 +121,30 @@ export function BarraComandosVoz({
             </p>
           )}
 
+          {sugestoes.length > 0 && (
+            <div className="rounded-md border border-clinical/40 bg-clinical/10 p-3 space-y-2">
+              <p className="text-sm text-foreground">
+                Não percebi bem. Queria dizer…
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {sugestoes.map((s, i) => (
+                  <Button
+                    key={`${s.frase}-${i}`}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onSugestao?.(s.comando)}
+                  >
+                    {s.frase}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Diga <strong>&quot;App, repetir&quot;</strong> para tentar de novo,
+                ou <strong>&quot;App, ajuda&quot;</strong> para ver todos os comandos.
+              </p>
+            </div>
+          )}
 
           {pendente && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">
