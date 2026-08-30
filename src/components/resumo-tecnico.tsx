@@ -1,6 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+export type CampoResumoActivo =
+  | "fragmentos"
+  | "blocos"
+  | "seccionado"
+  | "inclusao"
+  | "codigoFaturacao"
+  | null;
+
 type Props = {
   fragmentos: number;
   blocos: number;
@@ -17,13 +25,7 @@ type Props = {
   /** Versão compacta, para usar dentro do cartão de uma amostra. */
   compacto?: boolean;
   /** Campo a preencher por voz (modo guiado) — recebe realce visual. */
-  campoActivo?:
-    | "fragmentos"
-    | "blocos"
-    | "seccionado"
-    | "inclusao"
-    | "codigoFaturacao"
-    | null;
+  campoActivo?: CampoResumoActivo;
 };
 
 export function ResumoTecnico({
@@ -42,7 +44,7 @@ export function ResumoTecnico({
   campoActivo = null,
 }: Props) {
   const id = (campo: string) => `${idPrefix}-${campo}`;
-  const realce = (campo: NonNullable<Props["campoActivo"]>) =>
+  const realce = (campo: NonNullable<CampoResumoActivo>) =>
     campoActivo === campo
       ? "space-y-2 rounded-md p-2 ring-2 ring-clinical"
       : "space-y-2";

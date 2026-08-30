@@ -17,6 +17,8 @@ type Props = {
   onAdicionar: () => void;
   onRemover: (id: string) => void;
   onMover: (id: string, direccao: -1 | 1) => void;
+  /** Campo do resumo a preencher por voz, na amostra activa. */
+  campoResumoActivo?: import("@/components/resumo-tecnico").CampoResumoActivo;
 };
 
 export function ListaAmostras({
@@ -29,6 +31,7 @@ export function ListaAmostras({
   onAdicionar,
   onRemover,
   onMover,
+  campoResumoActivo = null,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -117,6 +120,7 @@ export function ListaAmostras({
             <ResumoTecnico
               idPrefix={amostra.id}
               compacto
+              campoActivo={activa ? campoResumoActivo : null}
               fragmentos={amostra.resumo.fragmentos}
               blocos={amostra.resumo.blocos}
               seccionado={amostra.resumo.seccionado}

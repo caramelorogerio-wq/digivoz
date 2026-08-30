@@ -17,6 +17,8 @@ type Props = {
   aGravar?: boolean;
   /** Escuta de comandos suspensa (parar só pelo botão). */
   vozSuspensa?: boolean;
+  /** Pergunta actual do modo guiado do resumo técnico. */
+  perguntaResumo?: string | null;
 };
 
 
@@ -31,6 +33,7 @@ export function BarraComandosVoz({
   onAjudaChange,
   aGravar = false,
   vozSuspensa = false,
+  perguntaResumo = null,
 }: Props) {
 
   const [expandida] = useState(true);
