@@ -306,7 +306,7 @@ export function interpretarComando(texto: string): Comando | null {
     return { tipo: "ajuda" };
 
   const analise = t.match(
-    /^(?:numero (?:da )?analise|n(?:umero)? analise|analise)\s+(.+)$/,
+    /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
   if (analise?.[1]) {
     const valor = juntarCodigo(analise[1]);
