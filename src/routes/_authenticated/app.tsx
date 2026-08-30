@@ -31,6 +31,7 @@ import {
 import { ListaAmostras } from "@/components/lista-amostras";
 import { CampoAnalise } from "@/components/campo-analise";
 import { ModeloDocumento } from "@/components/modelo-documento";
+import { ExportarHL7 } from "@/components/exportar-hl7";
 import type { TemplateDocx } from "@/lib/relatorio-docx";
 import {
   type Amostra,
@@ -1325,6 +1326,13 @@ function AppPage() {
                   <FileDown className="size-4" />
                   Exportar Word (.docx)
                 </Button>
+
+                <ExportarHL7
+                  numeroAnalise={numeroAnalise}
+                  amostras={amostras}
+                  instituicao={instituicao}
+                  servico={servico}
+                />
 
                 <Button
                   variant="outline"
