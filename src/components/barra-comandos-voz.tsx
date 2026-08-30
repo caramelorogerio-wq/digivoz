@@ -100,7 +100,16 @@ export function BarraComandosVoz({
                 : "Comandos desligados"}
           </div>
 
-          {activo && !aGravar && ultima && (
+          {perguntaResumo && (
+            <p className="rounded-md border border-clinical/40 bg-clinical/10 px-3 py-2 text-sm text-foreground">
+              Resumo técnico — {perguntaResumo} Diga{" "}
+              <strong>&quot;saltar&quot;</strong>,{" "}
+              <strong>&quot;voltar&quot;</strong> ou{" "}
+              <strong>&quot;sair&quot;</strong>.
+            </p>
+          )}
+
+          {activo && !aGravar && !perguntaResumo && ultima && (
             <p className="truncate rounded-md border border-border bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
               Ouvido: {ultima}
             </p>
