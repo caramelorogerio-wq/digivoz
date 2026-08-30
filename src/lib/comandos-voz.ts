@@ -122,7 +122,44 @@ const LETRAS_DITADAS: Record<string, string> = {
   xray: "X",
   yankee: "Y",
   zulu: "Z",
+
+  // Nomes das letras em português (já normalizados, sem acentos).
+  be: "B",
+  ce: "C",
+  de: "D",
+  efe: "F",
+  ge: "G",
+  je: "G",
+  aga: "H",
+  aca: "H",
+  jota: "J",
+  capa: "K",
+  ka: "K",
+  ele: "L",
+  eme: "M",
+  ene: "N",
+  pe: "P",
+  que: "Q",
+  erre: "R",
+  esse: "S",
+  te: "T",
+  ve: "V",
+  dablio: "W",
+  dabliu: "W",
+  xis: "X",
+  ipsilon: "Y",
+  ze: "Z",
 };
+
+/** Separadores que podem ser ditados dentro de um código. */
+const SEPARADORES: Record<string, string> = {
+  traco: "-",
+  hifen: "-",
+  menos: "-",
+  barra: "/",
+  ponto: ".",
+};
+
 
 export const normalizar = (frase: string) =>
   frase
