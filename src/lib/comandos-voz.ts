@@ -361,6 +361,15 @@ export function interpretarComando(texto: string): Comando | null {
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, análise C26H0000", faz: "Preenche o n.º da análise" },
+  {
+    dizer: "App, análise cê vinte e seis agá zero zero zero zero",
+    faz: "Mesmo código, ditado letra a letra (C26H0000)",
+  },
+  {
+    dizer: "App, análise dê eme pê traço zero zero um",
+    faz: "Códigos com traço ou barra (DMP-001)",
+  },
+
   { dizer: "App, iniciar gravação", faz: "Começa a gravar" },
   { dizer: "App, parar", faz: "Pára e transcreve" },
   { dizer: "App, nova amostra", faz: "Cria uma amostra" },
