@@ -268,27 +268,114 @@ function juntarCodigo(texto: string): string {
 }
 
 
-function lerResumo(texto: string): ResumoComando | null {
+/** Atalhos curtos: "3 fragmentos", "não seccionado", "código 31077"… */
+function lerAtalhoResumo(texto: string): ResumoComando | null {
   const resumo: ResumoComando = {};
 
-  const frag = texto.match(/(\d+|[a-z]+)\s+fragmentos?/);
+  const frag = texto.match(/^(?:sao |são )?(\d+|[a-z]+)\s+fragmentos?$/);
   const fragN = numeroDe(frag?.[1]);
   if (fragN !== undefined) resumo.fragmentos = fragN;
 
-  const blo = texto.match(/(\d+|[a-z]+)\s+blocos?/);
+  const blo = texto.match(/^(?:sao |são )?(\d+|[a-z]+)\s+blocos?$/);
   const bloN = numeroDe(blo?.[1]);
   if (bloN !== undefined) resumo.blocos = bloN;
 
-  if (/nao seccionado/.test(texto)) resumo.seccionado = false;
-  else if (/seccionado/.test(texto)) resumo.seccionado = true;
+  if (/^nao seccionado$/.test(texto)) resumo.seccionado = false;
+  else if (/^seccionado$/.test(texto)) resumo.seccionado = true;
 
-  if (/inclusao total|total/.test(texto)) resumo.inclusao = "total";
-  if (/reserva/.test(texto)) resumo.inclusao = "reserva";
+  if (/^(inclusao total|total)$/.test(texto)) resumo.inclusao = "total";
+  if (/^(reserva|com reserva|inclusao com reserva)$/.test(texto))
+    resumo.inclusao = "reserva";
 
-  if (/31057|31 057/.test(texto)) resumo.codigoFaturacao = "31057";
-  if (/31077|31 077/.test(texto)) resumo.codigoFaturacao = "31077";
+  if (/^(codigo\s+)?(31057|31 057)$/.test(texto))
+    resumo.codigoFaturacao = "31057";
+  if (/^(codigo\s+)?(31077|31 077)$/.test(texto))
+    resumo.codigoFaturacao = "31077";
 
   return Object.keys(resumo).length > 0 ? resumo : null;
+}
+
+/** Campos do resumo técnico, pela ordem do modo guiado. */
+export const CAMPOS_RESUMO = [
+  "fragmentos",
+  "blocos",
+  "seccionado",
+  "inclusao",
+  "codigoFaturacao",
+] as const;
+
+export type CampoResumo = (typeof CAMPOS_RESUMO)[number];
+
+export const PERGUNTAS_RESUMO: Record<
+  CampoResumo,
+  { pergunta: string; exemplos: string }
+> = {
+  fragmentos: { pergunta: "Fragmentos?", exemplos: "diga o número — “três”" },
+  blocos: { pergunta: "Blocos?", exemplos: "diga o número — “dois”" },
+  seccionado: {
+    pergunta: "Seccionado?",
+    exemplos: "“seccionado” ou “não seccionado”",
+  },
+  inclusao: { pergunta: "Inclusão?", exemplos: "“total” ou “reserva”" },
+  codigoFaturacao: {
+    pergunta: "Código de facturação?",
+    exemplos: "“31057” ou “31077” (ou “um” / “dois”)",
+  },
+};
+
+export type RespostaResumo =
+  | { tipo: "valor"; resumo: ResumoComando }
+  | { tipo: "saltar" }
+  | { tipo: "voltar" }
+  | { tipo: "repetir" }
+  | { tipo: "sair" };
+
+/**
+ * Interpreta uma resposta solta dentro do modo guiado do resumo técnico.
+ * Não exige a palavra de activação.
+ */
+export function interpretarRespostaResumo(
+  campo: CampoResumo,
+  texto: string,
+): RespostaResumo | null {
+  const t = normalizar(texto);
+  if (!t) return null;
+
+  if (/^(saltar|salta|seguinte|proximo|proxima|passar)$/.test(t))
+    return { tipo: "saltar" };
+  if (/^(voltar|volta|anterior|atras)$/.test(t)) return { tipo: "voltar" };
+  if (/^(repetir|repete|outra vez)$/.test(t)) return { tipo: "repetir" };
+  if (/^(sair|terminar|termina|fechar|cancelar|pronto|fim)$/.test(t))
+    return { tipo: "sair" };
+
+  if (campo === "fragmentos" || campo === "blocos") {
+    const n = numeroDe(t.replace(/\s+(fragmentos?|blocos?)$/, "").trim());
+    if (n !== undefined) return { tipo: "valor", resumo: { [campo]: n } };
+    return null;
+  }
+
+  if (campo === "seccionado") {
+    if (/^(nao|nao seccionado|nao e seccionado)$/.test(t))
+      return { tipo: "valor", resumo: { seccionado: false } };
+    if (/^(sim|seccionado|e seccionado)$/.test(t))
+      return { tipo: "valor", resumo: { seccionado: true } };
+    return null;
+  }
+
+  if (campo === "inclusao") {
+    if (/^(total|inclusao total|um|1)$/.test(t))
+      return { tipo: "valor", resumo: { inclusao: "total" } };
+    if (/^(reserva|com reserva|inclusao com reserva|dois|2)$/.test(t))
+      return { tipo: "valor", resumo: { inclusao: "reserva" } };
+    return null;
+  }
+
+  if (/^(31057|31 057|um|1|primeiro)$/.test(t))
+    return { tipo: "valor", resumo: { codigoFaturacao: "31057" } };
+  if (/^(31077|31 077|dois|2|segundo)$/.test(t))
+    return { tipo: "valor", resumo: { codigoFaturacao: "31077" } };
+
+  return null;
 }
 
 /**
