@@ -141,6 +141,39 @@ const tabelaResumo = (campos: [string, string][]) => {
   });
 };
 
+const celulaTexto = (texto: string, negrito = false) =>
+  new TableCell({
+    width: { size: COLUNA, type: WidthType.DXA },
+    borders: SEM_BORDAS,
+    margins: { top: 20, bottom: 20, left: 0, right: 120 },
+    children: [
+      new Paragraph({
+        spacing: { after: 0 },
+        children: [
+          new TextRun({
+            text: texto,
+            bold: negrito,
+            font: "Century Gothic",
+            size: 20,
+          }),
+        ],
+      }),
+    ],
+  });
+
+/** Quadro final com os códigos de facturação de cada amostra. */
+const tabelaFaturacao = (entradas: [string, string][]) =>
+  new Table({
+    width: { size: LARGURA_UTIL, type: WidthType.DXA },
+    columnWidths: [COLUNA, COLUNA],
+    borders: SEM_BORDAS,
+    rows: entradas.map(([nome, codigo]) =>
+      new TableRow({
+        children: [celulaTexto(nome, true), celulaTexto(codigo)],
+      }),
+    ),
+  });
+
 /** "1 a 3", "4 a 6", "4" (bloco único) ou "0". */
 export const intervaloBlocos = (inicio: number, quantidade: number) => {
   if (quantidade <= 0) return "0";
