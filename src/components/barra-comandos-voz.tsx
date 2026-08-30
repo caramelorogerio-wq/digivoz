@@ -2,7 +2,7 @@ import { Headphones, HelpCircle, Radio } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { LISTA_COMANDOS } from "@/lib/comandos-voz";
+import { LISTA_COMANDOS, type SugestaoComando } from "@/lib/comandos-voz";
 
 type Props = {
   activo: boolean;
@@ -19,6 +19,10 @@ type Props = {
   vozSuspensa?: boolean;
   /** Pergunta actual do modo guiado do resumo técnico. */
   perguntaResumo?: string | null;
+  /** Sugestões quando um comando não é reconhecido. */
+  sugestoes?: SugestaoComando[];
+  /** Chamado quando o utilizador escolhe uma sugestão. */
+  onSugestao?: (comando: SugestaoComando["comando"]) => void;
 };
 
 
