@@ -160,6 +160,12 @@ function AppPage() {
 
   const [aprendizagem, setAprendizagem] = useState(true);
 
+  const [configRetencao, setConfigRetencao] =
+    useState<ConfiguracaoRetencao>({
+      prazo_reter_dias: 90,
+      base_prazo: "ultima_edicao",
+    });
+
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
 
