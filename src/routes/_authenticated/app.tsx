@@ -265,11 +265,11 @@ function AppPage() {
   }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
-    const [r, t, m] = await Promise.all([
+    const [r, t, cfg, m] = await Promise.all([
       supabase
         .from("relatorios_transcritos")
         .select(
-          "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
+          "id, titulo, texto, created_at, updated_at, expira_em, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
         )
         .order("created_at", { ascending: false }),
 
@@ -280,6 +280,11 @@ function AppPage() {
         )
         .eq("activo", true)
         .order("ocorrencias", { ascending: false }),
+
+      supabase
+        .from("configuracoes_medico")
+        .select("prazo_reter_dias, base_prazo")
+        .maybeSingle(),
 
       supabase.auth.getUser(),
     ]);
