@@ -90,6 +90,8 @@ type Relatorio = {
   titulo: string;
   texto: string;
   created_at: string;
+  updated_at: string;
+  expira_em: string | null;
   paciente_id: string | null;
   amostras: unknown;
   fragmentos: number;
@@ -97,6 +99,11 @@ type Relatorio = {
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
+};
+
+type ConfiguracaoRetencao = {
+  prazo_reter_dias: number;
+  base_prazo: "criacao" | "ultima_edicao";
 };
 
 
