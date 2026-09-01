@@ -384,6 +384,41 @@ function AppPage() {
     );
   };
 
+  const guardarConfigRetencao = async (
+    novo: ConfiguracaoRetencao,
+  ) => {
+    const { data: sessao } =
+      await supabase.auth.getUser();
+
+    if (!sessao.user) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
+      return;
+    }
+
+    const { error } = await supabase
+      .from("configuracoes_medico")
+      .upsert(
+        {
+          medico_id: sessao.user.id,
+          prazo_reter_dias: novo.prazo_reter_dias,
+          base_prazo: novo.base_prazo,
+        },
+        { onConflict: "medico_id" },
+      );
+
+    if (error) {
+      toast.error(
+        "Não foi possível guardar as definições de retenção.",
+      );
+      return;
+    }
+
+    setConfigRetencao(novo);
+    toast.success("Definições de retenção guardadas.");
+  };
+
   const removerTermo = async (termo: Termo) => {
     const { error } = await supabase
       .from("termos_aprendidos")
