@@ -204,7 +204,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      apagar_relatorios_expirados: { Args: never; Returns: undefined }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
