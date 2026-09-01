@@ -130,6 +130,19 @@ const blobToBase64 = (blob: Blob) =>
     reader.readAsDataURL(blob);
   });
 
+/** Calcula a data de expiração de um relatório com base na configuração do médico. */
+const calcularExpiraEm = (
+  config: ConfiguracaoRetencao,
+  createdAt: string,
+  updatedAt: string,
+) => {
+  const base =
+    config.base_prazo === "criacao" ? createdAt : updatedAt;
+  const data = new Date(base);
+  data.setDate(data.getDate() + config.prazo_reter_dias);
+  return data.toISOString();
+};
+
 function AppPage() {
   const navigate = useNavigate();
 
