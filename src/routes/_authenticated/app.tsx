@@ -26,6 +26,7 @@ import {
   COMANDOS_DESTRUTIVOS,
   PERGUNTAS_RESUMO,
   extrairComando,
+  ehParagemDirecta,
   interpretarComando,
   interpretarRespostaResumo,
   sugerirComandos,
@@ -923,7 +924,9 @@ function AppPage() {
             return;
           }
 
-          toast.success("A gravar — diga \"App, parar\".");
+          // Escuta reactivada: o comando de paragem tem de continuar a funcionar.
+          setVozSuspensa(false);
+          toast.success("A gravar — diga \"App, parar\" (ou Esc).");
         })();
         break;
       }
@@ -1044,6 +1047,12 @@ function AppPage() {
           toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
           return;
         }
+      }
+
+      // Durante a gravação aceita-se "parar" sem a palavra de activação.
+      if (aGravarRef.current && ehParagemDirecta(transcript)) {
+        executar({ tipo: "parar-gravacao" });
+        return;
       }
 
       const corpo = extrairComando(transcript);
