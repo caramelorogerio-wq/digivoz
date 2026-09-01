@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated/app'
 import { Route as ApiTranscreverRouteImport } from './routes/api/transcrever'
+import { Route as ApiPublicHooksLimparRelatoriosRouteImport } from './routes/api/public/hooks/limpar-relatorios'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +40,26 @@ const ApiTranscreverRoute = ApiTranscreverRouteImport.update({
   path: '/api/transcrever',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksLimparRelatoriosRoute =
+  ApiPublicHooksLimparRelatoriosRouteImport.update({
+    id: '/api/public/hooks/limpar-relatorios',
+    path: '/api/public/hooks/limpar-relatorios',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/api/transcrever': typeof ApiTranscreverRoute
+  '/api/public/hooks/limpar-relatorios': typeof ApiPublicHooksLimparRelatoriosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthenticatedAppRoute
   '/api/transcrever': typeof ApiTranscreverRoute
+  '/api/public/hooks/limpar-relatorios': typeof ApiPublicHooksLimparRelatoriosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +68,23 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/api/transcrever': typeof ApiTranscreverRoute
+  '/api/public/hooks/limpar-relatorios': typeof ApiPublicHooksLimparRelatoriosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/app' | '/api/transcrever'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/api/transcrever'
+    | '/api/public/hooks/limpar-relatorios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app' | '/api/transcrever'
+  to:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/api/transcrever'
+    | '/api/public/hooks/limpar-relatorios'
   id:
     | '__root__'
     | '/'
@@ -72,6 +92,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/app'
     | '/api/transcrever'
+    | '/api/public/hooks/limpar-relatorios'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -79,6 +100,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiTranscreverRoute: typeof ApiTranscreverRoute
+  ApiPublicHooksLimparRelatoriosRoute: typeof ApiPublicHooksLimparRelatoriosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -118,6 +140,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTranscreverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/limpar-relatorios': {
+      id: '/api/public/hooks/limpar-relatorios'
+      path: '/api/public/hooks/limpar-relatorios'
+      fullPath: '/api/public/hooks/limpar-relatorios'
+      preLoaderRoute: typeof ApiPublicHooksLimparRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -137,6 +166,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiTranscreverRoute: ApiTranscreverRoute,
+  ApiPublicHooksLimparRelatoriosRoute: ApiPublicHooksLimparRelatoriosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
