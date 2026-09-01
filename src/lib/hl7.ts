@@ -8,6 +8,7 @@
  */
 
 import type { Amostra } from "./amostras";
+import { intervaloBlocos, rotuloBlocos } from "./relatorio-docx";
 
 export type DadosHL7 = {
   numeroAnalise: string;
@@ -157,7 +158,7 @@ export const gerarORU = ({
         "TX",
         "RESUMO^Resumo técnico^L",
         String(ordem),
-        escaparHL7(resumoTexto(a)),
+        escaparHL7(resumoTexto(a, primeiroBloco(usaveis, i))),
         "",
         "",
         "",
@@ -199,7 +200,7 @@ export const gerarBundleFhir = ({
           id: `${analise}-${ordem}`,
           accessionIdentifier: { value: `${analise}-${ordem}` },
           type: { text: titulo },
-          note: [{ text: resumoTexto(a) }],
+          note: [{ text: resumoTexto(a, primeiroBloco(usaveis, i)) }],
         },
         request: { method: "PUT", url: idEspecime },
       },
