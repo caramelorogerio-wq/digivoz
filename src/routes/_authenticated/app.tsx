@@ -645,6 +645,8 @@ function AppPage() {
       return;
     }
 
+    const agora = new Date().toISOString();
+
     const { error } =
       await supabase
         .from("relatorios_transcritos")
@@ -666,6 +668,11 @@ function AppPage() {
           inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
             amostraActiva.resumo.codigoFaturacao,
+          expira_em: calcularExpiraEm(
+            configRetencao,
+            agora,
+            agora,
+          ),
         });
 
 
