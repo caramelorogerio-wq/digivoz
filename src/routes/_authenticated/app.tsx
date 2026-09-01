@@ -682,7 +682,7 @@ function AppPage() {
         : [
             novaAmostra("", r.texto, {
               fragmentos: r.fragmentos ?? 0,
-              blocos: r.blocos ?? 0,
+              blocos: r.blocos ?? 1,
               seccionado: r.seccionado ?? false,
               inclusao: r.inclusao ?? "total",
               codigoFaturacao: r.codigo_faturacao ?? "31057",

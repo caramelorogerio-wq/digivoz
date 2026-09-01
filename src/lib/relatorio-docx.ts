@@ -174,12 +174,16 @@ const tabelaFaturacao = (entradas: [string, string][]) =>
     ),
   });
 
-/** "1 a 3", "4 a 6", "4" (bloco único) ou "0". */
+/** "1 a 3", "4 a 6" ou "4" (bloco único). Há sempre pelo menos 1 bloco. */
 export const intervaloBlocos = (inicio: number, quantidade: number) => {
-  if (quantidade <= 0) return "0";
-  if (quantidade === 1) return String(inicio);
-  return `${inicio} a ${inicio + quantidade - 1}`;
+  const n = Math.max(1, quantidade);
+  if (n === 1) return String(inicio);
+  return `${inicio} a ${inicio + n - 1}`;
 };
+
+/** "N.º do bloco" (1) ou "N.º dos blocos" (2+). */
+export const rotuloBlocos = (quantidade: number) =>
+  Math.max(1, quantidade) === 1 ? "N.º do bloco" : "N.º dos blocos";
 
 
 
@@ -303,7 +307,7 @@ export async function gerarRelatorioDocx({
     const campos: [string, string][] = [
       ["N.º de fragmentos", String(amostra.resumo.fragmentos)],
       [
-        "N.º de blocos",
+        rotuloBlocos(amostra.resumo.blocos),
         intervaloBlocos(primeiroBloco, amostra.resumo.blocos),
       ],
       ["Seccionado", amostra.resumo.seccionado ? "Sim" : "Não"],
@@ -320,7 +324,7 @@ export async function gerarRelatorioDocx({
           new TextRun({
             text: varias ? "Resumo técnico da amostra" : "Resumo técnico",
             bold: true,
-            size: varias ? 22 : 26,
+            size: 20,
             font: "Century Gothic",
           }),
         ],
@@ -466,7 +470,7 @@ export async function gerarRelatorioDocx({
             const primeiro =
               lista
                 .slice(0, indice)
-                .reduce((t, a) => t + (a.resumo.blocos || 0), 0) + 1;
+                .reduce((t, a) => t + Math.max(1, a.resumo.blocos), 0) + 1;
 
             return corpoAmostra(amostra, indice, primeiro);
           }),
