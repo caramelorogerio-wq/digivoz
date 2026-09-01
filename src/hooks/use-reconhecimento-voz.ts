@@ -105,6 +105,23 @@ export function useReconhecimentoVoz(opts: {
       }
     };
 
+    // Retentativas com recuo: o motor pode recusar arrancar enquanto o
+    // MediaRecorder detém o microfone.
+    const ATRASOS = [100, 300, 800, 1500];
+    const tentarArrancar = (tentativa: number) => {
+      if (cancelado || !refActivo.current) return;
+      const atraso = ATRASOS[Math.min(tentativa, ATRASOS.length - 1)]!;
+      window.setTimeout(() => {
+        if (cancelado || !refActivo.current) return;
+        try {
+          instancia.start();
+          setAEscutar(true);
+        } catch {
+          if (tentativa + 1 < ATRASOS.length) tentarArrancar(tentativa + 1);
+        }
+      }, atraso);
+    };
+
     instancia.onend = () => {
       setAEscutar(false);
       if (cancelado || !refActivo.current) return;
@@ -112,22 +129,14 @@ export function useReconhecimentoVoz(opts: {
       // Nota: o tempo de silêncio antes do navegador considerar a frase terminada
       // é controlado pelo motor de reconhecimento do navegador (Web Speech API);
       // usamos continuous=true para manter a sessão activa o máximo possível.
-      window.setTimeout(() => {
-        if (cancelado || !refActivo.current) return;
-        try {
-          instancia.start();
-          setAEscutar(true);
-        } catch {
-          // já em curso
-        }
-      }, 100);
+      tentarArrancar(0);
     };
 
     try {
       instancia.start();
       setAEscutar(true);
     } catch {
-      // já em curso
+      tentarArrancar(1);
     }
 
     return () => {

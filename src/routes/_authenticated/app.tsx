@@ -26,6 +26,7 @@ import {
   COMANDOS_DESTRUTIVOS,
   PERGUNTAS_RESUMO,
   extrairComando,
+  ehParagemDirecta,
   interpretarComando,
   interpretarRespostaResumo,
   sugerirComandos,
@@ -420,6 +421,14 @@ function AppPage() {
         return;
       }
 
+      // Remove a palavra de paragem final ("parar", "stop"…) do ditado.
+      const textoDitado = resultado.text
+        .replace(
+          /[\s,.;:-]*\b(?:app[,\s]+)?(?:parar|para|p[aá]ra|stop|terminar|termina|fim d[eo] ditado)\s*[.!?]*\s*$/i,
+          "",
+        )
+        .trim() || resultado.text;
+
       // A amostra fixada quando a gravação começou tem prioridade.
       const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
       alvoGravacaoRef.current = null;
@@ -431,8 +440,8 @@ function AppPage() {
 
       actualizarAmostra(alvo, {
         texto: destino.texto
-          ? `${destino.texto}\n\n${resultado.text}`
-          : resultado.text,
+          ? `${destino.texto}\n\n${textoDitado}`
+          : textoDitado,
       });
 
       setActivaId(alvo);
@@ -442,8 +451,8 @@ function AppPage() {
         "Transcrição concluída.",
       );
 
-      if (/\bamostra\b/i.test(resultado.text)) {
-        void separarAmostras(alvo, resultado.text, true);
+      if (/\bamostra\b/i.test(textoDitado)) {
+        void separarAmostras(alvo, textoDitado, true);
       }
 
     } catch (e) {
@@ -833,6 +842,20 @@ function AppPage() {
 
 
 
+  // Rede de segurança: Esc pára sempre a gravação.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!recorderRef.current?.aGravar()) return;
+      e.preventDefault();
+      recorderRef.current.parar();
+      setVozSuspensa(false);
+      toast.success("Gravação terminada.");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const [pendente, setPendente] = useState<{
     comando: Comando;
     descricao: string;
@@ -923,7 +946,9 @@ function AppPage() {
             return;
           }
 
-          toast.success("A gravar — diga \"App, parar\".");
+          // Escuta reactivada: o comando de paragem tem de continuar a funcionar.
+          setVozSuspensa(false);
+          toast.success("A gravar — diga \"App, parar\" (ou Esc).");
         })();
         break;
       }
@@ -1044,6 +1069,12 @@ function AppPage() {
           toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
           return;
         }
+      }
+
+      // Durante a gravação aceita-se "parar" sem a palavra de activação.
+      if (aGravarRef.current && ehParagemDirecta(transcript)) {
+        executar({ tipo: "parar-gravacao" });
+        return;
       }
 
       const corpo = extrairComando(transcript);

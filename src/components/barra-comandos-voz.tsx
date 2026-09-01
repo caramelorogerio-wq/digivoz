@@ -96,9 +96,9 @@ export function BarraComandosVoz({
               }`}
             />
             {aGravar
-              ? vozSuspensa
-                ? "A gravar — use o botão Parar Gravação"
-                : 'A gravar — diga "App, parar"'
+              ? vozSuspensa || !aEscutar
+                ? "A gravar — escuta indisponível: use o botão Parar Gravação ou a tecla Esc"
+                : 'A gravar — diga "parar" (ou "App, parar", ou Esc)'
               : activo
                 ? aEscutar
                   ? "À escuta de comandos"

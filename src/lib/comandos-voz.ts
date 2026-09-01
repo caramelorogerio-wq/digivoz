@@ -579,3 +579,27 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
   { dizer: "App, ajuda", faz: "Mostra esta lista" },
 ];
+
+/** Palavras que param a gravação mesmo sem a palavra de activação. */
+export const PALAVRAS_PARAGEM = [
+  "parar",
+  "para",
+  "pára",
+  "stop",
+  "terminar",
+  "termina",
+  "fim de ditado",
+  "fim do ditado",
+  "parar gravacao",
+  "parar gravação",
+];
+
+/**
+ * Durante a gravação aceita-se uma paragem directa: a frase é só uma
+ * palavra de paragem (com ou sem "app" à frente).
+ */
+export function ehParagemDirecta(texto: string): boolean {
+  const t = normalizar(texto).replace(/^app[,\s]+/, "").trim();
+  if (!t) return false;
+  return PALAVRAS_PARAGEM.some((p) => normalizar(p) === t);
+}
