@@ -421,6 +421,14 @@ function AppPage() {
         return;
       }
 
+      // Remove a palavra de paragem final ("parar", "stop"…) do ditado.
+      const textoDitado = resultado.text
+        .replace(
+          /[\s,.;:-]*\b(?:app[,\s]+)?(?:parar|para|p[aá]ra|stop|terminar|termina|fim d[eo] ditado)\s*[.!?]*\s*$/i,
+          "",
+        )
+        .trim() || resultado.text;
+
       // A amostra fixada quando a gravação começou tem prioridade.
       const alvoId = alvoGravacaoRef.current ?? amostraActiva.id;
       alvoGravacaoRef.current = null;
@@ -432,8 +440,8 @@ function AppPage() {
 
       actualizarAmostra(alvo, {
         texto: destino.texto
-          ? `${destino.texto}\n\n${resultado.text}`
-          : resultado.text,
+          ? `${destino.texto}\n\n${textoDitado}`
+          : textoDitado,
       });
 
       setActivaId(alvo);
@@ -443,8 +451,8 @@ function AppPage() {
         "Transcrição concluída.",
       );
 
-      if (/\bamostra\b/i.test(resultado.text)) {
-        void separarAmostras(alvo, resultado.text, true);
+      if (/\bamostra\b/i.test(textoDitado)) {
+        void separarAmostras(alvo, textoDitado, true);
       }
 
     } catch (e) {
@@ -833,6 +841,20 @@ function AppPage() {
   }, []);
 
 
+
+  // Rede de segurança: Esc pára sempre a gravação.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (!recorderRef.current?.aGravar()) return;
+      e.preventDefault();
+      recorderRef.current.parar();
+      setVozSuspensa(false);
+      toast.success("Gravação terminada.");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const [pendente, setPendente] = useState<{
     comando: Comando;
