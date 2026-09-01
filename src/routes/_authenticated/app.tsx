@@ -298,6 +298,15 @@ function AppPage() {
       setTermos(t.data);
     }
 
+    if (cfg.data) {
+      setConfigRetencao({
+        prazo_reter_dias: cfg.data.prazo_reter_dias,
+        base_prazo: cfg.data.base_prazo as
+          | "criacao"
+          | "ultima_edicao",
+      });
+    }
+
     if (m.data.user) {
       const perfil = await supabase
         .from("medicos")
