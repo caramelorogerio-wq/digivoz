@@ -1527,6 +1527,97 @@ function AppPage() {
                 </div>
               )}
             </section>
+
+            {/* RETENÇÃO DE RELATÓRIOS */}
+
+            <section className="panel space-y-4 p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-clinical/20 text-clinical">
+                  <CalendarDays className="size-5" />
+                </span>
+
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Retenção de relatórios
+                  </h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Define durante quanto tempo os relatórios permanecem
+                    guardados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="prazo-dias">
+                    Prazo (dias)
+                  </Label>
+
+                  <Input
+                    id="prazo-dias"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={configRetencao.prazo_reter_dias}
+                    onChange={(e) =>
+                      setConfigRetencao((ant) => ({
+                        ...ant,
+                        prazo_reter_dias: Math.max(
+                          1,
+                          Number(e.target.value) || 1,
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="base-prazo">
+                    Contar a partir de
+                  </Label>
+
+                  <Select
+                    value={configRetencao.base_prazo}
+                    onValueChange={(
+                      v: "criacao" | "ultima_edicao",
+                    ) =>
+                      setConfigRetencao((ant) => ({
+                        ...ant,
+                        base_prazo: v,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="base-prazo">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="criacao">
+                        Data de criação
+                      </SelectItem>
+
+                      <SelectItem value="ultima_edicao">
+                        Última edição
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={() =>
+                  guardarConfigRetencao(configRetencao)
+                }
+              >
+                <Save className="size-4" />
+                Guardar definições de retenção
+              </Button>
+            </section>
           </div>
 
           {/* COLUNA DIREITA */}
