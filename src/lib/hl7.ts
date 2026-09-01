@@ -45,10 +45,10 @@ const linhasTexto = (texto: string) =>
     .filter(Boolean);
 
 /** Descrição legível do resumo técnico de uma amostra. */
-const resumoTexto = (a: Amostra) =>
+const resumoTexto = (a: Amostra, primeiroBloco: number) =>
   [
     `N.º de fragmentos: ${a.resumo.fragmentos}`,
-    `N.º de blocos: ${a.resumo.blocos}`,
+    `${rotuloBlocos(a.resumo.blocos)}: ${intervaloBlocos(primeiroBloco, a.resumo.blocos)}`,
     `Seccionado: ${a.resumo.seccionado ? "Sim" : "Não"}`,
     `Inclusão: ${a.resumo.inclusao === "total" ? "Total" : "Com reserva"}`,
     `Código de facturação: ${a.resumo.codigoFaturacao}`,
