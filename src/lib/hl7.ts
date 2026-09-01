@@ -55,6 +55,11 @@ const resumoTexto = (a: Amostra, primeiroBloco: number) =>
     `Código de facturação: ${a.resumo.codigoFaturacao}`,
   ].join("; ");
 
+/** Primeiro número de bloco desta amostra (numeração contínua na análise). */
+const primeiroBloco = (lista: Amostra[], indice: number) =>
+  lista.slice(0, indice).reduce((t, a) => t + Math.max(1, a.resumo.blocos), 0) + 1;
+
+
 /**
  * Mensagem ORU^R01 (resultado de anatomia patológica).
  * Segmentos: MSH, PID mínimo, OBR por amostra e OBX de texto.
