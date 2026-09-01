@@ -7,7 +7,7 @@
 2. **Rótulo do número de blocos conforme a quantidade.**
    - Mais do que 1 bloco: `N.º dos blocos: 1 a 3` (intervalo contínuo entre amostras, como hoje).
    - Exactamente 1 bloco: `N.º do bloco: 4`.
-   - Zero blocos: mantém `N.º dos blocos: 0`.
+   - Nunca há 0 blocos: o mínimo é 1, pelo que o valor por omissão do campo passa a 1 e nunca se exporta "0".
 
 3. **Mesma regra na exportação HL7/FHIR.** O resumo textual enviado passa a usar o mesmo rótulo (`N.º do bloco` / `N.º dos blocos`) e o mesmo intervalo numérico contínuo por amostra que o Word, em vez da contagem simples actual.
 
