@@ -17,7 +17,6 @@ export const Route = createFileRoute("/api/public/hooks/limpar-relatorios")({
 
         const { error } = await supabaseAdmin.rpc(
           "apagar_relatorios_expirados" as never,
-          {},
           { get: true },
         );
 
