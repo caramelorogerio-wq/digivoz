@@ -14,10 +14,20 @@ import {
   Brain,
   Power,
   SplitSquareVertical,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
 import { BarraComandosVoz } from "@/components/barra-comandos-voz";
 import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
