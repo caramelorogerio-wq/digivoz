@@ -14,10 +14,20 @@ import {
   Brain,
   Power,
   SplitSquareVertical,
+  CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RecorderPanel, type RecorderHandle } from "@/components/recorder-panel";
 import { BarraComandosVoz } from "@/components/barra-comandos-voz";
 import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
@@ -90,6 +100,8 @@ type Relatorio = {
   titulo: string;
   texto: string;
   created_at: string;
+  updated_at: string;
+  expira_em: string | null;
   paciente_id: string | null;
   amostras: unknown;
   fragmentos: number;
@@ -97,6 +109,11 @@ type Relatorio = {
   seccionado: boolean;
   inclusao: "total" | "reserva";
   codigo_faturacao: "31057" | "31077";
+};
+
+type ConfiguracaoRetencao = {
+  prazo_reter_dias: number;
+  base_prazo: "criacao" | "ultima_edicao";
 };
 
 
@@ -122,6 +139,19 @@ const blobToBase64 = (blob: Blob) =>
 
     reader.readAsDataURL(blob);
   });
+
+/** Calcula a data de expiração de um relatório com base na configuração do médico. */
+const calcularExpiraEm = (
+  config: ConfiguracaoRetencao,
+  createdAt: string,
+  updatedAt: string,
+) => {
+  const base =
+    config.base_prazo === "criacao" ? createdAt : updatedAt;
+  const data = new Date(base);
+  data.setDate(data.getDate() + config.prazo_reter_dias);
+  return data.toISOString();
+};
 
 function AppPage() {
   const navigate = useNavigate();
@@ -152,6 +182,12 @@ function AppPage() {
   const [termos, setTermos] = useState<Termo[]>([]);
 
   const [aprendizagem, setAprendizagem] = useState(true);
+
+  const [configRetencao, setConfigRetencao] =
+    useState<ConfiguracaoRetencao>({
+      prazo_reter_dias: 90,
+      base_prazo: "ultima_edicao",
+    });
 
   const [textoOtimizado, setTextoOtimizado] =
     useState<string | null>(null);
@@ -239,11 +275,11 @@ function AppPage() {
   }, [template, instituicao, servico]);
 
   const carregar = useCallback(async () => {
-    const [r, t, m] = await Promise.all([
+    const [r, t, cfg, m] = await Promise.all([
       supabase
         .from("relatorios_transcritos")
         .select(
-          "id, titulo, texto, created_at, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
+          "id, titulo, texto, created_at, updated_at, expira_em, paciente_id, fragmentos, blocos, seccionado, inclusao, codigo_faturacao",
         )
         .order("created_at", { ascending: false }),
 
@@ -255,6 +291,11 @@ function AppPage() {
         .eq("activo", true)
         .order("ocorrencias", { ascending: false }),
 
+      supabase
+        .from("configuracoes_medico")
+        .select("prazo_reter_dias, base_prazo")
+        .maybeSingle(),
+
       supabase.auth.getUser(),
     ]);
 
@@ -265,6 +306,15 @@ function AppPage() {
 
     if (t.data) {
       setTermos(t.data);
+    }
+
+    if (cfg.data) {
+      setConfigRetencao({
+        prazo_reter_dias: cfg.data.prazo_reter_dias,
+        base_prazo: cfg.data.base_prazo as
+          | "criacao"
+          | "ultima_edicao",
+      });
     }
 
     if (m.data.user) {
@@ -342,6 +392,41 @@ function AppPage() {
         ? "Vocabulário aprendido ativado."
         : "Vocabulário aprendido desligado.",
     );
+  };
+
+  const guardarConfigRetencao = async (
+    novo: ConfiguracaoRetencao,
+  ) => {
+    const { data: sessao } =
+      await supabase.auth.getUser();
+
+    if (!sessao.user) {
+      toast.error(
+        "Sessão expirada. Volte a iniciar sessão.",
+      );
+      return;
+    }
+
+    const { error } = await supabase
+      .from("configuracoes_medico")
+      .upsert(
+        {
+          medico_id: sessao.user.id,
+          prazo_reter_dias: novo.prazo_reter_dias,
+          base_prazo: novo.base_prazo,
+        },
+        { onConflict: "medico_id" },
+      );
+
+    if (error) {
+      toast.error(
+        "Não foi possível guardar as definições de retenção.",
+      );
+      return;
+    }
+
+    setConfigRetencao(novo);
+    toast.success("Definições de retenção guardadas.");
   };
 
   const removerTermo = async (termo: Termo) => {
@@ -605,6 +690,8 @@ function AppPage() {
       return;
     }
 
+    const agora = new Date().toISOString();
+
     const { error } =
       await supabase
         .from("relatorios_transcritos")
@@ -626,6 +713,11 @@ function AppPage() {
           inclusao: amostraActiva.resumo.inclusao,
           codigo_faturacao:
             amostraActiva.resumo.codigoFaturacao,
+          expira_em: calcularExpiraEm(
+            configRetencao,
+            agora,
+            agora,
+          ),
         });
 
 
@@ -1434,6 +1526,97 @@ function AppPage() {
                   </p>
                 </div>
               )}
+            </section>
+
+            {/* RETENÇÃO DE RELATÓRIOS */}
+
+            <section className="panel space-y-4 p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-clinical/20 text-clinical">
+                  <CalendarDays className="size-5" />
+                </span>
+
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Retenção de relatórios
+                  </h2>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Define durante quanto tempo os relatórios permanecem
+                    guardados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="prazo-dias">
+                    Prazo (dias)
+                  </Label>
+
+                  <Input
+                    id="prazo-dias"
+                    type="number"
+                    min={1}
+                    max={3650}
+                    value={configRetencao.prazo_reter_dias}
+                    onChange={(e) =>
+                      setConfigRetencao((ant) => ({
+                        ...ant,
+                        prazo_reter_dias: Math.max(
+                          1,
+                          Number(e.target.value) || 1,
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="base-prazo">
+                    Contar a partir de
+                  </Label>
+
+                  <Select
+                    value={configRetencao.base_prazo}
+                    onValueChange={(
+                      v: "criacao" | "ultima_edicao",
+                    ) =>
+                      setConfigRetencao((ant) => ({
+                        ...ant,
+                        base_prazo: v,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="base-prazo">
+                      <SelectValue />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="criacao">
+                        Data de criação
+                      </SelectItem>
+
+                      <SelectItem value="ultima_edicao">
+                        Última edição
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={() =>
+                  guardarConfigRetencao(configRetencao)
+                }
+              >
+                <Save className="size-4" />
+                Guardar definições de retenção
+              </Button>
             </section>
           </div>
 

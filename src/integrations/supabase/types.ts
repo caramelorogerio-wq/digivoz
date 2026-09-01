@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      configuracoes_medico: {
+        Row: {
+          base_prazo: string
+          created_at: string
+          id: string
+          medico_id: string
+          prazo_reter_dias: number
+          updated_at: string
+        }
+        Insert: {
+          base_prazo?: string
+          created_at?: string
+          id?: string
+          medico_id: string
+          prazo_reter_dias?: number
+          updated_at?: string
+        }
+        Update: {
+          base_prazo?: string
+          created_at?: string
+          id?: string
+          medico_id?: string
+          prazo_reter_dias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       medicos: {
         Row: {
           aprendizagem_activa: boolean
@@ -83,6 +110,7 @@ export type Database = {
           blocos: number
           codigo_faturacao: string
           created_at: string
+          expira_em: string | null
           fragmentos: number
           id: string
           inclusao: string
@@ -98,6 +126,7 @@ export type Database = {
           blocos?: number
           codigo_faturacao?: string
           created_at?: string
+          expira_em?: string | null
           fragmentos?: number
           id?: string
           inclusao?: string
@@ -113,6 +142,7 @@ export type Database = {
           blocos?: number
           codigo_faturacao?: string
           created_at?: string
+          expira_em?: string | null
           fragmentos?: number
           id?: string
           inclusao?: string
