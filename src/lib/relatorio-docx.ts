@@ -94,9 +94,9 @@ const SEM_BORDAS = {
   insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
 };
 
-const celula = (campo?: [string, string]) =>
+const celula = (campo?: [string, string], largura = COLUNA) =>
   new TableCell({
-    width: { size: COLUNA, type: WidthType.DXA },
+    width: { size: largura, type: WidthType.DXA },
     borders: SEM_BORDAS,
     margins: { top: 20, bottom: 20, left: 0, right: 120 },
     children: [
@@ -121,21 +121,33 @@ const celula = (campo?: [string, string]) =>
     ],
   });
 
-/** Campos do resumo técnico em duas colunas paralelas, sem grelha visível. */
-const tabelaResumo = (campos: [string, string][]) => {
+/** Campos do resumo técnico em colunas paralelas, sem grelha visível.
+ *  Em relatórios com várias amostras usa uma só coluna para dar destaque
+ *  ao intervalo contínuo de blocos. */
+const tabelaResumo = (campos: [string, string][], colunas: 1 | 2 = 2) => {
   const linhas: TableRow[] = [];
 
-  for (let i = 0; i < campos.length; i += 2) {
-    linhas.push(
-      new TableRow({
-        children: [celula(campos[i]), celula(campos[i + 1])],
-      }),
-    );
+  if (colunas === 1) {
+    for (const campo of campos) {
+      linhas.push(
+        new TableRow({
+          children: [celula(campo, LARGURA_UTIL)],
+        }),
+      );
+    }
+  } else {
+    for (let i = 0; i < campos.length; i += 2) {
+      linhas.push(
+        new TableRow({
+          children: [celula(campos[i]), celula(campos[i + 1])],
+        }),
+      );
+    }
   }
 
   return new Table({
     width: { size: LARGURA_UTIL, type: WidthType.DXA },
-    columnWidths: [COLUNA, COLUNA],
+    columnWidths: colunas === 1 ? [LARGURA_UTIL] : [COLUNA, COLUNA],
     borders: SEM_BORDAS,
     rows: linhas,
   });
@@ -329,7 +341,7 @@ export async function gerarRelatorioDocx({
           }),
         ],
       }),
-      tabelaResumo(campos),
+      tabelaResumo(campos, varias ? 1 : 2),
     );
 
     return paragrafos;
