@@ -1,47 +1,25 @@
-# Melhorias possíveis na DermaVoz
+# Correcção do layout do resumo técnico
 
-A app está funcionalmente completa e alinhada com o teu fluxo clínico. Abaixo estão melhorias opcionais que podem aumentar a segurança, a velocidade ou a conveniência no dia-a-dia, sem alterar o fluxo de ditado actual.
+## Observação confirmada no código
 
-## Opções de melhoria (escolhe as que quiseres)
+- No componente `src/components/resumo-tecnico.tsx`, os campos **N.º de fragmentos** e **N.º de blocos** estão sempre numa grelha de 2 colunas (`grid grid-cols-2`).
+- Na exportação Word (`src/lib/relatorio-docx.ts`), a função `tabelaResumo()` também coloca estes dois campos lado a lado numa mesma linha da tabela.
 
-### 1. Pesquisa e organização dos relatórios guardados
-**Problema:** Já tens 96 relatórios. A lista actual é linear e pode tornar-se difícil de navegar à medida que cresce.
-**Melhoria:** Adicionar uma caixa de pesquisa por título/número de análise, ordenação (mais recente / mais antigo) e paginação ou "carregar mais".
+## Interpretação da tua mensagem
 
-### 2. Rascunho local com auto-guardar
-**Problema:** Se o browser fechar ou a rede falhar antes de clicares "Guardar relatório", perdes o texto ditado.
-**Melhoria:** Guardar o estado actual (amostras, número da análise, resumo técnico) automaticamente no `localStorage` a cada poucos segundos, e recuperá-lo ao abrir a app.
+Parece-me que estás a referir-te ao **documento Word exportado**: quando há várias amostras, o número dos blocos (que agora é um intervalo contínuo, ex. "4 a 5") fica na mesma linha do número de fragmentos, e isso só te parece correcto quando o relatório tem apenas uma amostra.
 
-### 3. Desfazer após otimização com IA
-**Problema:** O botão "Otimizar Relatório com IA" substitui o texto original. Se o resultado não for o esperado, não há forma rápida de voltar atrás.
-**Melhoria:** Guardar uma cópia do texto antes de otimizar e mostrar um botão "Desfazer otimização" durante essa sessão.
+## Plano de correcção
 
-### 4. Atalhos de teclado para acções frequentes
-**Problema:** Algumas acções só são acessíveis por clique ou por voz.
-**Melhoria:** Adicionar atalhos como `Ctrl/Cmd + S` para guardar, `Ctrl/Cmd + E` para exportar Word, `Ctrl/Cmd + Shift + N` para nova amostra, e mostrá-los num pequeno modal de ajuda.
+1. **Manter o layout lado-a-lado para relatórios de amostra única** — continua a fazer sentido e ocupa menos espaço.
+2. **Empilhar os campos verticalmente no resumo técnico de cada amostra quando o relatório tem várias amostras** — cada campo (fragmentos, blocos, seccionado, inclusão) fica numa linha própria, dando mais destaque ao intervalo contínuo de blocos.
+3. **Aplicar a mesma lógica ao componente UI `ResumoTecnico` em modo compacto** (usado nas amostras dentro de `ListaAmostras`), para a interface espelhar o documento exportado.
 
-### 5. Confirmação antes de apagar um relatório
-**Problema:** O ícone do caixote apaga o relatório imediatamente sem confirmação.
-**Melhoria:** Adicionar um `alert-dialog` de confirmação antes de eliminar.
+## Pergunta de confirmação
 
-### 6. Pré-visualização simples do documento Word
-**Problema:** Só sabes como ficou o documento depois de o exportar e abrir.
-**Melhoria:** Mostrar um modal com uma pré-visualização em texto simples do cabeçalho, amostras e resumo técnico antes de descarregar.
+Queres que eu corrija:
+- **A)** O documento Word exportado.
+- **B)** A interface na app (o quadro cinzento dentro de cada amostra).
+- **C)** Ambos.
 
-### 7. Duplicar amostra ou relatório
-**Problema:** Quando várias amostras partilham o mesmo resumo técnico ou texto base, é trabalhoso copiar manualmente.
-**Melhoria:** Adicionar um botão "Duplicar amostra" e, na lista de relatórios, uma opção "Duplicar relatório".
-
-### 8. Estatísticas simples no painel
-**Problema:** Não há visibilidade sobre volume de trabalho.
-**Melhoria:** Mostrar pequenos números no topo: relatórios esta semana, total de palavras ditadas, amostras médias por relatório.
-
-### 9. Melhorias de layout em mobile
-**Problema:** A vista actual usa duas colunas (`lg:grid-cols-[380px_1fr]`). Em ecrãs pequenos empilha tudo, mas a coluna da esquerda fica muito longa antes de chegar às amostras.
-**Melhoria:** Em mobile, colapsar a coluna da esquerda num acordeão ou separadores, colocando as amostras e acções no topo.
-
-## Recomendação inicial
-
-Se quiseres começar por algo pequeno e de alto impacto, sugiro as opções **1 (pesquisa)**, **2 (rascunho local)** e **5 (confirmação ao apagar)**, porque resolvem fricção real sem mudar o comportamento do ditado.
-
-Diz-me quais destas opções te interessam, ou se preferes que eu explore outra direcção (por exemplo, integração com outro sistema, mais comandos de voz, ou estatísticas mais detalhadas).
+Assim que confirmares, implemento a alteração apenas no(s) ficheiro(s) necessário(s).
