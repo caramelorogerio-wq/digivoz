@@ -341,7 +341,7 @@ export async function gerarRelatorioDocx({
           }),
         ],
       }),
-      tabelaResumo(campos),
+      tabelaResumo(campos, varias ? 1 : 2),
     );
 
     return paragrafos;
