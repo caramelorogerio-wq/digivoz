@@ -1,25 +1,17 @@
-# Correcção do layout do resumo técnico
+# Correcção do layout do resumo técnico no Word
 
-## Observação confirmada no código
+## Opção escolhida
+**A) Corrigir o documento Word exportado.**
 
-- No componente `src/components/resumo-tecnico.tsx`, os campos **N.º de fragmentos** e **N.º de blocos** estão sempre numa grelha de 2 colunas (`grid grid-cols-2`).
-- Na exportação Word (`src/lib/relatorio-docx.ts`), a função `tabelaResumo()` também coloca estes dois campos lado a lado numa mesma linha da tabela.
+## Problema
+Quando o relatório tem várias amostras, o número dos blocos (agora mostrado como intervalo contínuo, ex. "4 a 5") fica na mesma linha do número de fragmentos no resumo técnico. Este layout lado-a-lado só funciona bem quando há uma única amostra.
 
-## Interpretação da tua mensagem
+## Solução
+- Manter o resumo técnico com **duas colunas** em relatórios de amostra única.
+- Em relatórios com **várias amostras**, apresentar os campos do resumo técnico de cada amostra em **linhas separadas** (uma coluna só), dando mais destaque ao intervalo de blocos.
 
-Parece-me que estás a referir-te ao **documento Word exportado**: quando há várias amostras, o número dos blocos (que agora é um intervalo contínuo, ex. "4 a 5") fica na mesma linha do número de fragmentos, e isso só te parece correcto quando o relatório tem apenas uma amostra.
+## Ficheiro a alterar
+- `src/lib/relatorio-docx.ts`
 
-## Plano de correcção
-
-1. **Manter o layout lado-a-lado para relatórios de amostra única** — continua a fazer sentido e ocupa menos espaço.
-2. **Empilhar os campos verticalmente no resumo técnico de cada amostra quando o relatório tem várias amostras** — cada campo (fragmentos, blocos, seccionado, inclusão) fica numa linha própria, dando mais destaque ao intervalo contínuo de blocos.
-3. **Aplicar a mesma lógica ao componente UI `ResumoTecnico` em modo compacto** (usado nas amostras dentro de `ListaAmostras`), para a interface espelhar o documento exportado.
-
-## Pergunta de confirmação
-
-Queres que eu corrija:
-- **A)** O documento Word exportado.
-- **B)** A interface na app (o quadro cinzento dentro de cada amostra).
-- **C)** Ambos.
-
-Assim que confirmares, implemento a alteração apenas no(s) ficheiro(s) necessário(s).
+## Verificação
+- Gerar um documento Word de teste com várias amostras e confirmar que os campos do resumo técnico aparecem empilhados verticalmente.
