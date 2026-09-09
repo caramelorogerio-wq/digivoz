@@ -3,13 +3,11 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import {
-  mimeFor,
   VOCABULARIO,
   PROMPT_OTIMIZACAO,
   PROMPT_SEPARACAO,
   gatewayError,
 } from "./ai-clinico";
-
 
 const inputSchema = z.object({
   audioBase64: z.string().min(10),
@@ -28,14 +26,20 @@ export const transcribeAudio = createServerFn({ method: "POST" })
     }
 
     const apiUrl =
-      process.env["VITE_LOVABLE_API_URL"] ??
-      "https://digivoz.lovable.app";
+      process.env["DIGIVOZ_AI_URL"] ??
+      "https://digivoz-ai.caramelo-rogerio.workers.dev";
+
+    const internalKey = process.env["DIGIVOZ_AI_KEY"];
+
+    if (!internalKey) {
+      throw new Error("Serviço de transcrição não está configurado.");
+    }
 
     const response = await fetch(`${apiUrl}/api/transcrever`, {
       method: "POST",
       headers: {
-        Authorization: authorization,
         "Content-Type": "application/json",
+        "X-DermaVoz-Key": internalKey,
       },
       body: JSON.stringify({
         audioBase64: data.audioBase64,
