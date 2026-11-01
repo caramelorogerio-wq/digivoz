@@ -24,7 +24,6 @@ export type Comando =
   | { tipo: "apagar-amostra" }
   | { tipo: "resumo"; resumo: ResumoComando }
   | { tipo: "resumo-guiado" }
-  | { tipo: "separar" }
   | { tipo: "otimizar" }
   | { tipo: "guardar" }
   | { tipo: "exportar" }
@@ -428,8 +427,6 @@ const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
   { frase: "amostra", comando: { tipo: "ir-amostra", indice: 1 } },
   { frase: "apagar amostra", comando: { tipo: "apagar-amostra" } },
   { frase: "remover amostra", comando: { tipo: "apagar-amostra" } },
-  { frase: "separar amostras", comando: { tipo: "separar" } },
-  { frase: "dividir amostras", comando: { tipo: "separar" } },
   { frase: "otimizar relatório", comando: { tipo: "otimizar" } },
   { frase: "optimizar", comando: { tipo: "otimizar" } },
   { frase: "guardar relatório", comando: { tipo: "guardar" } },
@@ -513,8 +510,6 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(apagar|remover|eliminar) (a )?amostra$/.test(t))
     return { tipo: "apagar-amostra" };
 
-  if (/^(separar amostras|separar|dividir amostras)$/.test(t))
-    return { tipo: "separar" };
 
   if (/^(otimizar|optimizar|otimiza|otimizar relatorio|otimizar com ia|optimizar com ia)$/.test(t))
     return { tipo: "otimizar" };
@@ -559,7 +554,6 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
   { dizer: "App, nova amostra", faz: "Cria uma amostra" },
   { dizer: "App, amostra dois", faz: "Muda para essa amostra" },
   { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
-  { dizer: "App, separar amostras", faz: "Separa o ditado em amostras" },
   {
     dizer: "App, resumo técnico",
     faz: "Entra no quadro e pergunta campo a campo",

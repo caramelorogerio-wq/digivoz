@@ -13,7 +13,6 @@ import {
   Loader2,
   Brain,
   Power,
-  SplitSquareVertical,
   CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,14 +54,12 @@ import {
   type ResumoAmostra,
   novaAmostra,
   resumoVazio,
-  separarAmostrasHeuristica,
   textoCompleto,
   contarPalavras,
 } from "@/lib/amostras";
 import {
   transcribeAudio,
   optimizeReport,
-  splitSamples,
 } from "@/lib/transcribe.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -158,13 +155,11 @@ function AppPage() {
 
   const transcrever = useServerFn(transcribeAudio);
   const otimizar = useServerFn(optimizeReport);
-  const separarIA = useServerFn(splitSamples);
   const carregarVocabulario = useServerFn(getVocabularioPessoal);
   const guardarCorreccoes = useServerFn(registarCorreccoes);
 
   const [aTranscrever, setATranscrever] = useState(false);
   const [aOtimizar, setAOtimizar] = useState(false);
-  const [aSeparar, setASeparar] = useState(false);
 
   const [amostras, setAmostras] = useState<Amostra[]>(() => [
     novaAmostra(),
@@ -536,9 +531,6 @@ function AppPage() {
         "Transcrição concluída.",
       );
 
-      if (/\bamostra\b/i.test(textoDitado)) {
-        void separarAmostras(alvo, textoDitado, true);
-      }
 
     } catch (e) {
       toast.error(
@@ -548,78 +540,6 @@ function AppPage() {
       );
     } finally {
       setATranscrever(false);
-    }
-  };
-
-  const separarAmostras = async (
-    id: string,
-    conteudo: string,
-    automatico = false,
-  ) => {
-    if (!conteudo.trim()) {
-      if (!automatico) {
-        toast.error("Não há texto para separar.");
-      }
-      return;
-    }
-
-    setASeparar(true);
-
-    try {
-      let blocos: { titulo: string; texto: string }[] = [];
-
-      try {
-        const resultado = await separarIA({
-          data: { texto: conteudo },
-        });
-
-        blocos = resultado.amostras;
-      } catch {
-        blocos = [];
-      }
-
-      if (blocos.length === 0) {
-        blocos = separarAmostrasHeuristica(conteudo);
-      }
-
-      if (blocos.length <= 1) {
-        if (!automatico) {
-          toast.info(
-            "Não foram detetadas várias amostras neste ditado.",
-          );
-        }
-        return;
-      }
-
-      setAmostras((lista) => {
-        const indice = lista.findIndex((a) => a.id === id);
-
-        if (indice < 0) return lista;
-
-        const base = lista[indice]!;
-
-        const novas: Amostra[] = blocos.map((b, i) => ({
-          id: i === 0 ? base.id : `${base.id}-${i}`,
-          titulo: b.titulo || `Amostra ${i + 1}`,
-          texto: b.texto,
-          resumo:
-            i === 0
-              ? base.resumo
-              : { ...resumoVazio() },
-        }));
-
-        return [
-          ...lista.slice(0, indice),
-          ...novas,
-          ...lista.slice(indice + 1),
-        ];
-      });
-
-      toast.success(
-        `${blocos.length} amostras separadas. Reveja os títulos.`,
-      );
-    } finally {
-      setASeparar(false);
     }
   };
 
@@ -963,7 +883,6 @@ function AppPage() {
     exportar,
     copiar,
     sair,
-    separarAmostras,
     adicionarAmostra,
     removerAmostra,
     actualizarAmostra,
@@ -979,7 +898,6 @@ function AppPage() {
     exportar,
     copiar,
     sair,
-    separarAmostras,
     adicionarAmostra,
     removerAmostra,
     actualizarAmostra,
@@ -1087,12 +1005,6 @@ function AppPage() {
         irParaCampo(CAMPOS_RESUMO[0]);
         break;
 
-      case "separar":
-        void a.separarAmostras(
-          a.amostraActiva.id,
-          a.amostraActiva.texto,
-        );
-        break;
 
       case "otimizar":
         void a.otimizarTexto();
@@ -1395,25 +1307,6 @@ function AppPage() {
 
 
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2"
-              disabled={aSeparar || !amostraActiva.texto.trim()}
-              onClick={() =>
-                separarAmostras(
-                  amostraActiva.id,
-                  amostraActiva.texto,
-                )
-              }
-            >
-              {aSeparar ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <SplitSquareVertical className="size-4" />
-              )}
-              Separar amostras do ditado
-            </Button>
 
 
             <CampoAnalise
