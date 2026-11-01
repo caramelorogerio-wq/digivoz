@@ -172,6 +172,15 @@ function AppPage() {
 
   const [numeroAnalise, setNumeroAnalise] = useState("");
 
+  // O título da primeira amostra é o N.º da análise (ditado ou lido).
+  useEffect(() => {
+    setAmostras((lista) =>
+      lista.length && lista[0]!.titulo !== numeroAnalise
+        ? [{ ...lista[0]!, titulo: numeroAnalise }, ...lista.slice(1)]
+        : lista,
+    );
+  }, [numeroAnalise]);
+
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
 
   const [contexto, setContexto] =
