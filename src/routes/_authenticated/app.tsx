@@ -14,6 +14,7 @@ import {
   Brain,
   Power,
   CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
 import {
   CAMPOS_RESUMO,
   COMANDOS_DESTRUTIVOS,
+  COMANDOS_IMEDIATOS,
   PERGUNTAS_RESUMO,
   extrairComando,
   ehParagemDirecta,
@@ -595,79 +597,25 @@ function AppPage() {
 
 
 
+  // Zero retenção (RGPD): os relatórios não são guardados no servidor.
   const guardar = async () => {
-    if (!texto.trim()) {
-      toast.error(
-        "Não há texto para guardar.",
-      );
-      return;
-    }
-
-    const { data: sessao } =
-      await supabase.auth.getUser();
-
-    if (!sessao.user) {
-      return;
-    }
-
-    const agora = new Date().toISOString();
-
-    const { error } =
-      await supabase
-        .from("relatorios_transcritos")
-        .insert({
-          medico_id: sessao.user.id,
-          paciente_id: null,
-
-          titulo:
-            numeroAnalise.trim() ||
-            `Relatório ${new Date().toLocaleDateString(
-              "pt-PT",
-            )}`,
-
-          texto,
-          amostras,
-          fragmentos: amostraActiva.resumo.fragmentos,
-          blocos: amostraActiva.resumo.blocos,
-          seccionado: amostraActiva.resumo.seccionado,
-          inclusao: amostraActiva.resumo.inclusao,
-          codigo_faturacao:
-            amostraActiva.resumo.codigoFaturacao,
-          expira_em: calcularExpiraEm(
-            configRetencao,
-            agora,
-            agora,
-          ),
-        });
-
-
-    if (error) {
-      toast.error(
-        "Não foi possível guardar o relatório.",
-      );
-      return;
-    }
-
     if (
       aprendizagem &&
       textoOtimizado &&
       textoOtimizado !== texto
     ) {
       try {
+        // Só termos médicos isolados, sem ligação ao doente.
         await guardarCorreccoes({
-          data: {
-            antes: textoOtimizado,
-            depois: texto,
-          },
+          data: { antes: textoOtimizado, depois: texto },
         });
       } catch {
-        // A aprendizagem é auxiliar:
-        // uma falha aqui não impede o arquivo.
+        // auxiliar
       }
     }
 
-    toast.success(
-      "Relatório guardado na sua conta.",
+    toast.info(
+      "Os relatórios não são guardados. Exporte ou copie o texto antes de fechar.",
     );
 
     setTextoOtimizado(null);
@@ -1049,9 +997,36 @@ function AppPage() {
     }
   }, [irParaCampo, sairModoResumo]);
 
+  const interimFeitoRef = useRef(false);
+
   const tratarFrase = useCallback(
     ({ transcript, isFinal }: { transcript: string; isFinal: boolean }) => {
-      if (!isFinal) return;
+      // Disparo imediato: comandos simples executam no resultado intermédio.
+      if (!isFinal) {
+        if (interimFeitoRef.current || campoResumoRef.current) return;
+        if (aGravarRef.current) {
+          if (ehParagemDirecta(transcript)) {
+            interimFeitoRef.current = true;
+            executar({ tipo: "parar-gravacao" });
+          }
+          return;
+        }
+        const corpoI = extrairComando(transcript);
+        if (corpoI === null) return;
+        const cI = interpretarComando(corpoI);
+        if (cI && COMANDOS_IMEDIATOS.has(cI.tipo)) {
+          interimFeitoRef.current = true;
+          setSugestoes([]);
+          falhasSeguidasRef.current = 0;
+          executar(cI);
+        }
+        return;
+      }
+
+      if (interimFeitoRef.current) {
+        interimFeitoRef.current = false;
+        return;
+      }
 
       ultimaFraseRef.current = transcript;
 
@@ -1070,7 +1045,7 @@ function AppPage() {
         if (/^(nao|cancelar|não|nope)$/.test(t)) {
           setSugestoes([]);
           falhasSeguidasRef.current = 0;
-          toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
+          toast.info("Sugestão ignorada. Diga \"Comando, ajuda\" para ver os comandos.");
           return;
         }
       }
@@ -1129,7 +1104,20 @@ function AppPage() {
         return;
       }
 
-      if (corpo === null) return; // ditado normal
+      if (corpo === null) {
+        // Fora da gravação, comandos directos sem "Comando" (só não destrutivos).
+        if (aGravarRef.current) return; // ditado normal
+        const directo = interpretarComando(transcript);
+        if (
+          directo &&
+          (COMANDOS_IMEDIATOS.has(directo.tipo) || directo.tipo === "analise")
+        ) {
+          falhasSeguidasRef.current = 0;
+          setSugestoes([]);
+          executar(directo);
+        }
+        return;
+      }
 
       const comando = interpretarComando(corpo);
       if (!comando) {
@@ -1255,10 +1243,18 @@ function AppPage() {
             </p>
           </div>
 
+          <span
+            className="ml-auto hidden items-center gap-1.5 rounded-full border border-primary-foreground/30 px-3 py-1 text-xs text-primary-foreground sm:inline-flex"
+            title="Nenhum dado clínico ou identificação de doente é gravado nos servidores. O texto fica apenas na memória do seu computador até exportar ou fechar."
+          >
+            <ShieldCheck className="size-3.5" />
+            Conforme RGPD · Zero retenção
+          </span>
+
           <Button
             variant="secondary"
             size="sm"
-            className="ml-auto gap-2"
+            className="ml-auto gap-2 sm:ml-0"
             onClick={sair}
           >
             <LogOut className="size-4" />
@@ -1510,6 +1506,44 @@ function AppPage() {
                 <Save className="size-4" />
                 Guardar definições de retenção
               </Button>
+            </section>
+
+            {/* PRIVACIDADE & RGPD */}
+            <section className="panel space-y-3 p-6">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-clinical/20 text-clinical">
+                  <ShieldCheck className="size-5" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Privacidade &amp; RGPD
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Sessão efémera — zero retenção de dados clínicos.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <strong className="text-foreground">Processamento efémero:</strong>{" "}
+                  o áudio é apenas transcrito e otimizado, sem ficar armazenado.
+                </li>
+                <li>
+                  <strong className="text-foreground">Sem histórico no servidor:</strong>{" "}
+                  nenhum relatório ou dado de doente é gravado.
+                </li>
+                <li>
+                  <strong className="text-foreground">Só no seu computador:</strong>{" "}
+                  o texto desaparece ao fechar ou recarregar a página.
+                </li>
+                <li>
+                  <strong className="text-foreground">Vocabulário:</strong>{" "}
+                  guardam-se apenas termos médicos isolados, sem ligação a doentes.
+                </li>
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                O ficheiro Word exportado ou o texto copiado são a única cópia existente.
+              </p>
             </section>
           </div>
 
