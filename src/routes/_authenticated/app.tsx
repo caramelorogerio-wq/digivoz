@@ -536,9 +536,6 @@ function AppPage() {
         "Transcrição concluída.",
       );
 
-      if (/\bamostra\b/i.test(textoDitado)) {
-        void separarAmostras(alvo, textoDitado, true);
-      }
 
     } catch (e) {
       toast.error(
@@ -1395,25 +1392,6 @@ function AppPage() {
 
 
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2"
-              disabled={aSeparar || !amostraActiva.texto.trim()}
-              onClick={() =>
-                separarAmostras(
-                  amostraActiva.id,
-                  amostraActiva.texto,
-                )
-              }
-            >
-              {aSeparar ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <SplitSquareVertical className="size-4" />
-              )}
-              Separar amostras do ditado
-            </Button>
 
 
             <CampoAnalise
