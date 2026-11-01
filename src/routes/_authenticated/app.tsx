@@ -14,6 +14,7 @@ import {
   Brain,
   Power,
   CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +34,7 @@ import { useReconhecimentoVoz } from "@/hooks/use-reconhecimento-voz";
 import {
   CAMPOS_RESUMO,
   COMANDOS_DESTRUTIVOS,
+  COMANDOS_IMEDIATOS,
   PERGUNTAS_RESUMO,
   extrairComando,
   ehParagemDirecta,
@@ -1043,7 +1045,7 @@ function AppPage() {
         if (/^(nao|cancelar|não|nope)$/.test(t)) {
           setSugestoes([]);
           falhasSeguidasRef.current = 0;
-          toast.info("Sugestão ignorada. Diga \"App, ajuda\" para ver os comandos.");
+          toast.info("Sugestão ignorada. Diga \"Comando, ajuda\" para ver os comandos.");
           return;
         }
       }

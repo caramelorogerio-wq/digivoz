@@ -42,7 +42,23 @@ export const COMANDOS_DESTRUTIVOS: ReadonlySet<Comando["tipo"]> = new Set([
   "sair",
 ]);
 
-export const PALAVRA_ACTIVACAO = "App";
+/**
+ * Comandos inequívocos e não destrutivos: executam logo que ouvidos
+ * e são aceites sem a palavra de activação fora da gravação.
+ */
+export const COMANDOS_IMEDIATOS: ReadonlySet<Comando["tipo"]> = new Set([
+  "iniciar-gravacao",
+  "resumo-guiado",
+  "resumo",
+  "parar-gravacao",
+  "nova-amostra",
+  "otimizar",
+  "exportar",
+  "copiar",
+  "ajuda",
+]);
+
+export const PALAVRA_ACTIVACAO = "Comando";
 
 const NUMEROS: Record<string, number> = {
   zero: 0,
@@ -171,18 +187,12 @@ export const normalizar = (frase: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+// Ordenadas da mais longa para a mais curta, para "apps" não ser lido como "ap".
 const VARIANTES_ACTIVACAO = [
-  "app",
-  "ap",
-  "apo",
-  "apps",
-  "dermavoz",
-  "derma voz",
-  "derma vos",
-  "dermavos",
-  "dermabos",
-  "derma boz",
-];
+  "comando", "comanda", "camando", "com ando",
+  "derma voz", "derma vos", "derma boz", "dermavoz", "dermavos", "dermabos",
+  "aplicacao", "app", "apps", "apo", "ape", "api", "hap", "epa", "ap", "up", "ep",
+].sort((a, b) => b.length - a.length);
 
 /** Devolve o texto do comando quando a frase começa pela palavra de activação. */
 export function extrairComando(frase: string): string | null {
@@ -499,10 +509,17 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
     return { tipo: "parar-gravacao" };
 
-  if (/^(nova amostra|adicionar amostra|proxima amostra)$/.test(t))
+  if (/^(nova amostra|adicionar amostra|proxima amostra|mais uma amostra|outra amostra|amostra seguinte|amostra nova|proxima)$/.test(t))
     return { tipo: "nova-amostra" };
 
-  const irAmostra = t.match(/^(?:ir para |abrir |seleccionar |selecionar )?amostra (\d+|[a-z]+)$/);
+  const ORDINAIS: Record<string, number> = {
+    primeira: 1, segunda: 2, terceira: 3, quarta: 4, quinta: 5,
+    sexta: 6, setima: 7, oitava: 8, nona: 9, decima: 10,
+  };
+  const ordinal = t.match(/^(?:ir para |passa para |passar para |passa a |abrir )?(?:a )?(primeira|segunda|terceira|quarta|quinta|sexta|setima|oitava|nona|decima) amostra$/);
+  if (ordinal?.[1]) return { tipo: "ir-amostra", indice: ORDINAIS[ordinal[1]]! };
+
+  const irAmostra = t.match(/^(?:ir para |passa para |passar para |passa a |abrir |seleccionar |selecionar )?(?:a )?amostra (?:numero )?(\d+|[a-z]+)$/);
   const indice = numeroDe(irAmostra?.[1]);
   if (indice !== undefined && indice >= 1)
     return { tipo: "ir-amostra", indice };
@@ -511,16 +528,16 @@ export function interpretarComando(texto: string): Comando | null {
     return { tipo: "apagar-amostra" };
 
 
-  if (/^(otimizar|optimizar|otimiza|otimizar relatorio|otimizar com ia|optimizar com ia)$/.test(t))
+  if (/^(otimizar|optimizar|otimiza|optimiza|otimizar relatorio|optimizar relatorio|otimizar texto|otimizar com ia|optimizar com ia|rever texto)$/.test(t))
     return { tipo: "otimizar" };
 
   if (/^(guardar|guarda|gravar relatorio|guardar relatorio)$/.test(t))
     return { tipo: "guardar" };
 
-  if (/^(exportar|exporta|exportar word|exportar documento|exportar para word)$/.test(t))
+  if (/^(exportar|esportar|exporta|esporta|descarregar|descarrega|gerar (o )?(word|documento|ficheiro|relatorio)|fazer (o )?word|passar (para|pra) (o )?word|(exportar|esportar|descarregar) (o |para |pra )?(o )?(word|documento|ficheiro|relatorio))$/.test(t))
     return { tipo: "exportar" };
 
-  if (/^(copiar|copia|copiar texto)$/.test(t)) return { tipo: "copiar" };
+  if (/^(copiar|copia|copiar texto|copiar tudo|copia tudo)$/.test(t)) return { tipo: "copiar" };
 
   if (/^(novo relatorio|limpar|limpa|apagar tudo)$/.test(t))
     return { tipo: "novo-relatorio" };
@@ -593,7 +610,7 @@ export const PALAVRAS_PARAGEM = [
  * palavra de paragem (com ou sem "app" à frente).
  */
 export function ehParagemDirecta(texto: string): boolean {
-  const t = normalizar(texto).replace(/^app[,\s]+/, "").trim();
+  const t = normalizar(texto).replace(/^(app|comando)[,\s]+/, "").trim();
   if (!t) return false;
   return PALAVRAS_PARAGEM.some((p) => normalizar(p) === t);
 }
