@@ -279,6 +279,17 @@ function juntarCodigo(texto: string): string {
 }
 
 
+/**
+ * As análises seguem o formato C<ano>H<número> (ex.: C26H1234).
+ * Corrige leituras parciais: "26H1234" → "C26H1234", "SE26H…"/"S26H…" → "C26H…".
+ */
+export function formatarAnalise(codigo: string): string {
+  const c = codigo.toUpperCase().replace(/[^A-Z0-9/-]/g, "");
+  const m = c.match(/^(?:C|CE|SE|S|K)?(\d{2})(?:H|AGA|ACA|A)(\d+)$/);
+  if (m) return `C${m[1]}H${m[2]}`;
+  return c;
+}
+
 /** Atalhos curtos: "3 fragmentos", "não seccionado", "código 31077"… */
 function lerAtalhoResumo(texto: string): ResumoComando | null {
   const resumo: ResumoComando = {};
@@ -499,7 +510,7 @@ export function interpretarComando(texto: string): Comando | null {
     /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
   if (analise?.[1]) {
-    const valor = juntarCodigo(analise[1]);
+    const valor = formatarAnalise(juntarCodigo(analise[1]));
     if (valor) return { tipo: "analise", valor };
   }
 
@@ -556,39 +567,43 @@ export function interpretarComando(texto: string): Comando | null {
 
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
-  { dizer: "App, análise C26H0000", faz: "Preenche o n.º da análise" },
+  { dizer: "Comando, análise C26H0000", faz: "Preenche o n.º da análise" },
   {
-    dizer: "App, análise cê vinte e seis agá zero zero zero zero",
+    dizer: "Comando, análise cê vinte e seis agá zero zero zero zero",
     faz: "Mesmo código, ditado letra a letra (C26H0000)",
   },
   {
-    dizer: "App, análise dê eme pê traço zero zero um",
+    dizer: "Comando, análise dê eme pê traço zero zero um",
     faz: "Códigos com traço ou barra (DMP-001)",
   },
 
-  { dizer: "App, iniciar gravação", faz: "Começa a gravar" },
-  { dizer: "App, parar", faz: "Pára e transcreve" },
-  { dizer: "App, nova amostra", faz: "Cria uma amostra" },
-  { dizer: "App, amostra dois", faz: "Muda para essa amostra" },
-  { dizer: "App, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
+  { dizer: "Comando, iniciar gravação", faz: "Começa a gravar" },
+  { dizer: "Comando, parar", faz: "Pára e transcreve" },
+  { dizer: "Comando, nova amostra", faz: "Cria uma amostra" },
+  { dizer: "Comando, amostra dois", faz: "Muda para essa amostra" },
+  { dizer: "Comando, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
   {
-    dizer: "App, resumo técnico",
+    dizer: "Comando, resumo técnico",
     faz: "Entra no quadro e pergunta campo a campo",
   },
   {
     dizer: "3 fragmentos · 2 blocos · seccionado · total · 31077",
-    faz: "Respostas curtas dentro do modo guiado (sem dizer “App”)",
+    faz: "Respostas curtas dentro do modo guiado (sem dizer “Comando”)",
   },
   { dizer: "saltar / voltar / repetir / sair", faz: "Navegar no modo guiado" },
-  { dizer: "App, 3 fragmentos", faz: "Atalho directo, sem modo guiado" },
-  { dizer: "App, otimizar", faz: "Otimiza o relatório com IA" },
-  { dizer: "App, guardar", faz: "Guarda o relatório" },
-  { dizer: "App, exportar", faz: "Gera o ficheiro Word" },
-  { dizer: "App, copiar", faz: "Copia o texto" },
-  { dizer: "App, repetir", faz: "Repete a última frase ouvida" },
-  { dizer: "App, novo relatório", faz: "Limpa tudo (confirmar)" },
-  { dizer: "App, terminar sessão", faz: "Sai da conta (confirmar)" },
-  { dizer: "App, ajuda", faz: "Mostra esta lista" },
+  { dizer: "Comando, 3 fragmentos", faz: "Atalho directo, sem modo guiado" },
+  { dizer: "Comando, otimizar", faz: "Otimiza o relatório com IA" },
+  { dizer: "Comando, guardar", faz: "Guarda o relatório" },
+  { dizer: "Comando, exportar", faz: "Gera o ficheiro Word" },
+  { dizer: "Comando, copiar", faz: "Copia o texto" },
+  { dizer: "Comando, repetir", faz: "Repete a última frase ouvida" },
+  { dizer: "Comando, novo relatório", faz: "Limpa tudo (confirmar)" },
+  { dizer: "Comando, terminar sessão", faz: "Sai da conta (confirmar)" },
+  { dizer: "Comando, ajuda", faz: "Mostra esta lista" },
+  {
+    dizer: "Sem gravar: análise C26H1234, exportar, otimizar, copiar…",
+    faz: "Funcionam sem dizer «Comando»",
+  },
 ];
 
 /** Palavras que param a gravação mesmo sem a palavra de activação. */
