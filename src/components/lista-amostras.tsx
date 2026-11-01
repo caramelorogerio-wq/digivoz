@@ -54,7 +54,9 @@ export function ListaAmostras({
                   htmlFor={`titulo-${amostra.id}`}
                   className="text-sm font-medium text-foreground"
                 >
-                  Título da amostra {indice + 1}
+                  {indice === 0
+                    ? "Número da análise"
+                    : `Título da amostra ${indice + 1}`}
                 </label>
 
                 <Input
@@ -63,7 +65,9 @@ export function ListaAmostras({
                   onChange={(e) =>
                     onTituloChange(amostra.id, e.target.value)
                   }
-                  placeholder={`Amostra ${indice + 1}`}
+                  placeholder={
+                    indice === 0 ? "C26H…" : `Amostra ${indice + 1}`
+                  }
                 />
               </div>
 
