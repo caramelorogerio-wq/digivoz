@@ -191,6 +191,7 @@ export const normalizar = (frase: string) =>
 // Ordenadas da mais longa para a mais curta, para "apps" não ser lido como "ap".
 const VARIANTES_ACTIVACAO = [
   "comando", "comanda", "camando", "com ando",
+  "ditado", "ditada", "ditar", "ditad", "ditados",
   "derma voz", "derma vos", "derma boz", "dermavoz", "dermavos", "dermabos",
   "aplicacao", "app", "apps", "apo", "ape", "api", "hap", "epa", "ap", "up", "ep",
 ].sort((a, b) => b.length - a.length);
