@@ -191,6 +191,7 @@ export const normalizar = (frase: string) =>
 // Ordenadas da mais longa para a mais curta, para "apps" não ser lido como "ap".
 const VARIANTES_ACTIVACAO = [
   "comando", "comanda", "camando", "com ando",
+  "ditado", "ditada", "ditar", "ditad", "ditados",
   "derma voz", "derma vos", "derma boz", "dermavoz", "dermavos", "dermabos",
   "aplicacao", "app", "apps", "apo", "ape", "api", "hap", "epa", "ap", "up", "ep",
 ].sort((a, b) => b.length - a.length);
@@ -633,7 +634,7 @@ export const PALAVRAS_PARAGEM = [
  * palavra de paragem (com ou sem "app" à frente).
  */
 export function ehParagemDirecta(texto: string): boolean {
-  const t = normalizar(texto).replace(/^(app|comando)[,\s]+/, "").trim();
+  const t = normalizar(texto).replace(/^(app|comando|ditar|ditado)[,\s]+/, "").trim();
   if (!t) return false;
   return PALAVRAS_PARAGEM.some((p) => normalizar(p) === t);
 }
