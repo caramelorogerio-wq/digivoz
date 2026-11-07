@@ -743,6 +743,12 @@ function AppPage() {
       a.click();
 
       URL.revokeObjectURL(url);
+
+      const nova = novaAmostra();
+      setAmostras([nova]);
+      setActivaId(nova.id);
+      setNumeroAnalise("");
+      toast.success("Exportado. Campos limpos para a próxima análise.");
     } catch {
       toast.error(
         "Não foi possível gerar o documento Word.",
@@ -1561,6 +1567,7 @@ function AppPage() {
                     const nova = novaAmostra();
                     setAmostras([nova]);
                     setActivaId(nova.id);
+                    setNumeroAnalise("");
                   }}
                   disabled={!texto}
                 >
