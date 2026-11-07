@@ -988,6 +988,20 @@ function AppPage() {
         void a.copiar();
         break;
 
+      case "nova-analise": {
+        const nova = novaAmostra();
+        a.setAmostras([nova]);
+        a.setActivaId(nova.id);
+        a.setNumeroAnalise(c.valor);
+        setTimeout(() => {
+          const el = document.getElementById("amostras-analise");
+          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+          (document.getElementById(`titulo-${nova.id}`) as HTMLInputElement | null)?.focus();
+        }, 50);
+        toast.success(c.valor ? `Nova análise ${c.valor}.` : "Nova análise — amostras prontas.");
+        break;
+      }
+
       case "novo-relatorio": {
         const nova = novaAmostra();
         a.setAmostras([nova]);
@@ -1009,7 +1023,8 @@ function AppPage() {
       c.tipo === "iniciar-gravacao" ||
       c.tipo === "nova-amostra" ||
       c.tipo === "ir-amostra" ||
-      c.tipo === "novo-relatorio"
+      c.tipo === "novo-relatorio" ||
+      c.tipo === "nova-analise"
     ) {
       sairModoResumo();
     }
@@ -1478,7 +1493,7 @@ function AppPage() {
 
           <div className="space-y-6">
 
-            <section className="flex flex-col gap-4">
+            <section id="amostras-analise" className="flex flex-col gap-4 scroll-mt-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">

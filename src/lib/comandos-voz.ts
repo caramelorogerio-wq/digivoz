@@ -17,6 +17,7 @@ export type ResumoComando = {
 
 export type Comando =
   | { tipo: "analise"; valor: string }
+  | { tipo: "nova-analise"; valor: string }
   | { tipo: "iniciar-gravacao" }
   | { tipo: "parar-gravacao" }
   | { tipo: "nova-amostra" }
@@ -506,6 +507,12 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(ajuda|que comandos|comandos|lista de comandos)$/.test(t))
     return { tipo: "ajuda" };
 
+  const nova = t.match(/^(?:nova|novo|proxima)\s+analise(?:\s+(.+))?$/);
+  if (nova) {
+    const valor = nova[1] ? formatarAnalise(juntarCodigo(nova[1])) : "";
+    return { tipo: "nova-analise", valor };
+  }
+
   const analise = t.match(
     /^(?:(?:numero|n|numero de|codigo|codigo de|referencia|referencia de)\s+)?(?:da\s+|de\s+|do\s+)?analise(?:\s+numero)?\s+(.+)$/,
   );
@@ -577,6 +584,7 @@ export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
     faz: "Códigos com traço ou barra (DMP-001)",
   },
 
+  { dizer: "Comando, nova análise", faz: "Limpa e abre o quadro Amostras da análise" },
   { dizer: "Comando, iniciar gravação", faz: "Começa a gravar" },
   { dizer: "Comando, parar", faz: "Pára e transcreve" },
   { dizer: "Comando, nova amostra", faz: "Cria uma amostra" },
