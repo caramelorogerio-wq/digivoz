@@ -57,9 +57,8 @@ export function BarraComandosVoz({
           </h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Diga <strong>&quot;Comando&quot;</strong> seguido da ordem — por
-            exemplo, &quot;Comando, exportar&quot;. Sem gravar, basta dizer &quot;exportar&quot; ou &quot;análise C26H1234&quot;. (&quot;Ditar&quot;, &quot;Ditado&quot;, &quot;App&quot; e &quot;DermaVoz&quot;
-            também continuam a funcionar.)
+            Gravar · Análise C26H1234 · Nova amostra · Resumo técnico ·
+            Otimizar · Exportar · Copiar · Nova análise
           </p>
         </div>
 
@@ -98,7 +97,7 @@ export function BarraComandosVoz({
             {aGravar
               ? vozSuspensa || !aEscutar
                 ? "A gravar — escuta indisponível: use o botão Parar Gravação ou a tecla Esc"
-                : 'A gravar — diga "parar" (ou "Comando, parar", ou Esc)'
+                : 'A gravar — parar / terminar / fim de ditado'
               : activo
                 ? aEscutar
                   ? "À escuta de comandos"
@@ -140,16 +139,15 @@ export function BarraComandosVoz({
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Diga <strong>&quot;Comando, repetir&quot;</strong> para tentar de novo,
-                ou <strong>&quot;Comando, ajuda&quot;</strong> para ver todos os comandos.
+                <strong>&quot;repetir&quot;</strong> · <strong>&quot;ajuda&quot;</strong>
               </p>
             </div>
           )}
 
           {pendente && (
             <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-foreground">
-              {pendente} — diga <strong>&quot;Comando, confirmar&quot;</strong> ou{" "}
-              <strong>&quot;Comando, cancelar&quot;</strong>.
+              {pendente} — <strong>&quot;confirmar&quot;</strong> /{" "}
+              <strong>&quot;cancelar&quot;</strong>
             </p>
           )}
 

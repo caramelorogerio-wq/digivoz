@@ -2,9 +2,8 @@
  * Reconhecimento de comandos de voz em pt-PT para o fluxo do DermaVoz.
  *
  * Cada frase captada pelo navegador é normalizada (sem acentos, sem
- * pontuação) e comparada com os padrões abaixo. Só as frases iniciadas pela
- * palavra de activação ("App") são tratadas como comando — tudo o resto
- * é ditado normal e é ignorado por este módulo.
+ * pontuação) e comparada com ordens directas. Durante a gravação só uma
+ * frase inteira de paragem é um comando; o restante texto é ditado clínico.
  */
 
 export type ResumoComando = {
@@ -58,8 +57,6 @@ export const COMANDOS_IMEDIATOS: ReadonlySet<Comando["tipo"]> = new Set([
   "copiar",
   "ajuda",
 ]);
-
-export const PALAVRA_ACTIVACAO = "Comando";
 
 const NUMEROS: Record<string, number> = {
   zero: 0,
@@ -187,24 +184,6 @@ export const normalizar = (frase: string) =>
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
-// Ordenadas da mais longa para a mais curta, para "apps" não ser lido como "ap".
-const VARIANTES_ACTIVACAO = [
-  "comando", "comanda", "camando", "com ando",
-  "ditado", "ditada", "ditar", "ditad", "ditados",
-  "derma voz", "derma vos", "derma boz", "dermavoz", "dermavos", "dermabos",
-  "aplicacao", "app", "apps", "apo", "ape", "api", "hap", "epa", "ap", "up", "ep",
-].sort((a, b) => b.length - a.length);
-
-/** Devolve o texto do comando quando a frase começa pela palavra de activação. */
-export function extrairComando(frase: string): string | null {
-  const n = normalizar(frase);
-  for (const v of VARIANTES_ACTIVACAO) {
-    if (n === v) return "";
-    if (n.startsWith(`${v} `)) return n.slice(v.length + 1).trim();
-  }
-  return null;
-}
 
 const numeroDe = (palavra: string | undefined): number | undefined => {
   if (!palavra) return undefined;
@@ -415,14 +394,14 @@ function semelhanca(a: string, b: string): number {
   for (let j = 0; j <= n; j++) dp[j] = j;
 
   for (let i = 1; i <= m; i++) {
-    let prev = dp[0]!;
+    let prev = dp[0] ?? 0;
     dp[0] = i;
     for (let j = 1; j <= n; j++) {
-      const temp = dp[j]!;
+      const temp = dp[j] ?? 0;
       if (s1[i - 1] === s2[j - 1]) {
         dp[j] = prev;
       } else {
-        dp[j] = 1 + Math.min(prev, dp[j]!, dp[j - 1]!);
+        dp[j] = 1 + Math.min(prev, dp[j] ?? 0, dp[j - 1] ?? 0);
       }
       prev = temp;
     }
@@ -445,6 +424,7 @@ const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
   { frase: "gravar", comando: { tipo: "iniciar-gravacao" } },
   { frase: "parar gravação", comando: { tipo: "parar-gravacao" } },
   { frase: "terminar gravação", comando: { tipo: "parar-gravacao" } },
+  { frase: "fim de ditado", comando: { tipo: "parar-gravacao" } },
   { frase: "nova amostra", comando: { tipo: "nova-amostra" } },
   { frase: "próxima amostra", comando: { tipo: "nova-amostra" } },
   { frase: "amostra", comando: { tipo: "ir-amostra", indice: 1 } },
@@ -456,9 +436,11 @@ const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
   { frase: "guardar", comando: { tipo: "guardar" } },
   { frase: "exportar word", comando: { tipo: "exportar" } },
   { frase: "exportar", comando: { tipo: "exportar" } },
+  { frase: "descarregar", comando: { tipo: "exportar" } },
   { frase: "copiar texto", comando: { tipo: "copiar" } },
   { frase: "copiar", comando: { tipo: "copiar" } },
   { frase: "novo relatório", comando: { tipo: "novo-relatorio" } },
+  { frase: "nova análise", comando: { tipo: "nova-analise", valor: "" } },
   { frase: "limpar tudo", comando: { tipo: "novo-relatorio" } },
   { frase: "terminar sessão", comando: { tipo: "sair" } },
   { frase: "sair", comando: { tipo: "sair" } },
@@ -476,7 +458,7 @@ const FRASES_COMANDO: { frase: string; comando: Comando }[] = [
 
 /**
  * Devolve os comandos mais parecidos com o texto ouvido.
- * Limiares: ≥0.9 executa directamente; ≥0.6 sugere; abaixo só lista genérica.
+ * Só sugere frases semelhantes (≥0.6); nunca executa aproximações automaticamente.
  */
 export function sugerirComandos(texto: string): SugestaoComando[] {
   const t = normalizar(texto);
@@ -489,11 +471,11 @@ export function sugerirComandos(texto: string): SugestaoComando[] {
   }));
 
   scored.sort((a, b) => b.score - a.score);
-  return scored.filter((s) => s.score >= 0.45).slice(0, 3);
+  return scored.filter((s) => s.score >= 0.6).slice(0, 3);
 }
 
 /**
- * Interpreta o texto que vem depois da palavra de activação.
+ * Interpreta uma ordem directa, sem palavra de activação.
  * Devolve `null` quando nenhum comando é reconhecido.
  */
 export function interpretarComando(texto: string): Comando | null {
@@ -525,7 +507,7 @@ export function interpretarComando(texto: string): Comando | null {
   if (/^(iniciar|comecar|come[cç]a|inicia|gravar|grava)( gravacao| a gravar)?$/.test(t))
     return { tipo: "iniciar-gravacao" };
 
-  if (/^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
+  if (ehParagemDirecta(t) || /^(parar|para|terminar|termina|stop)( gravacao| de gravar| a gravacao)?$/.test(t))
     return { tipo: "parar-gravacao" };
 
   if (/^(nova amostra|adicionar amostra|proxima amostra|mais uma amostra|outra amostra|amostra seguinte|amostra nova|proxima)$/.test(t))
@@ -536,7 +518,8 @@ export function interpretarComando(texto: string): Comando | null {
     sexta: 6, setima: 7, oitava: 8, nona: 9, decima: 10,
   };
   const ordinal = t.match(/^(?:ir para |passa para |passar para |passa a |abrir )?(?:a )?(primeira|segunda|terceira|quarta|quinta|sexta|setima|oitava|nona|decima) amostra$/);
-  if (ordinal?.[1]) return { tipo: "ir-amostra", indice: ORDINAIS[ordinal[1]]! };
+  const ordinalIndice = ordinal?.[1] ? ORDINAIS[ordinal[1]] : undefined;
+  if (ordinalIndice !== undefined) return { tipo: "ir-amostra", indice: ordinalIndice };
 
   const irAmostra = t.match(/^(?:ir para |passa para |passar para |passa a |abrir |seleccionar |selecionar )?(?:a )?amostra (?:numero )?(\d+|[a-z]+)$/);
   const indice = numeroDe(irAmostra?.[1]);
@@ -575,47 +558,44 @@ export function interpretarComando(texto: string): Comando | null {
 
 /** Lista mostrada no diálogo de ajuda. */
 export const LISTA_COMANDOS: { dizer: string; faz: string }[] = [
-  { dizer: "Comando, análise C26H0000", faz: "Preenche o n.º da análise" },
+  { dizer: "análise C26H0000", faz: "Preenche o n.º da análise" },
   {
-    dizer: "Comando, análise cê vinte e seis agá zero zero zero zero",
+    dizer: "análise cê vinte e seis agá zero zero zero zero",
     faz: "Mesmo código, ditado letra a letra (C26H0000)",
   },
   {
-    dizer: "Comando, análise dê eme pê traço zero zero um",
+    dizer: "análise dê eme pê traço zero zero um",
     faz: "Códigos com traço ou barra (DMP-001)",
   },
 
-  { dizer: "Comando, nova análise", faz: "Limpa e abre o quadro Amostras da análise" },
-  { dizer: "Comando, iniciar gravação", faz: "Começa a gravar" },
-  { dizer: "Comando, parar", faz: "Pára e transcreve" },
-  { dizer: "Comando, nova amostra", faz: "Cria uma amostra" },
-  { dizer: "Comando, amostra dois", faz: "Muda para essa amostra" },
-  { dizer: "Comando, apagar amostra", faz: "Remove a amostra activa (confirmar)" },
+  { dizer: "nova análise", faz: "Limpa e abre o quadro Amostras da análise" },
+  { dizer: "gravar / iniciar gravação", faz: "Começa a gravar" },
+  { dizer: "parar / terminar / fim de ditado", faz: "Pára e transcreve" },
+  { dizer: "nova amostra / próxima amostra", faz: "Cria uma amostra" },
+  { dizer: "amostra dois", faz: "Muda para essa amostra" },
+  { dizer: "apagar amostra", faz: "Remove a amostra activa (confirmar)" },
   {
-    dizer: "Comando, resumo técnico",
+    dizer: "resumo técnico",
     faz: "Entra no quadro e pergunta campo a campo",
   },
   {
     dizer: "3 fragmentos · 2 blocos · seccionado · total · 31077",
-    faz: "Respostas curtas dentro do modo guiado (sem dizer “Comando”)",
+    faz: "Respostas curtas dentro do modo guiado",
   },
   { dizer: "saltar / voltar / repetir / sair", faz: "Navegar no modo guiado" },
-  { dizer: "Comando, 3 fragmentos", faz: "Atalho directo, sem modo guiado" },
-  { dizer: "Comando, otimizar", faz: "Otimiza o relatório com IA" },
-  { dizer: "Comando, guardar", faz: "Guarda o relatório" },
-  { dizer: "Comando, exportar", faz: "Gera o ficheiro Word" },
-  { dizer: "Comando, copiar", faz: "Copia o texto" },
-  { dizer: "Comando, repetir", faz: "Repete a última frase ouvida" },
-  { dizer: "Comando, novo relatório", faz: "Limpa tudo (confirmar)" },
-  { dizer: "Comando, terminar sessão", faz: "Sai da conta (confirmar)" },
-  { dizer: "Comando, ajuda", faz: "Mostra esta lista" },
-  {
-    dizer: "Sem gravar: análise C26H1234, exportar, otimizar, copiar…",
-    faz: "Funcionam sem dizer «Comando»",
-  },
+  { dizer: "3 fragmentos / inclusão total", faz: "Atalhos directos, sem modo guiado" },
+  { dizer: "otimizar", faz: "Otimiza o relatório com IA" },
+  { dizer: "guardar", faz: "Recorda que deve exportar ou copiar antes de sair" },
+  { dizer: "exportar / descarregar", faz: "Gera o ficheiro Word" },
+  { dizer: "copiar", faz: "Copia o texto" },
+  { dizer: "repetir", faz: "Repete a última frase ouvida" },
+  { dizer: "novo relatório", faz: "Limpa tudo (confirmar)" },
+  { dizer: "terminar sessão", faz: "Sai da conta (confirmar)" },
+  { dizer: "confirmar / cancelar", faz: "Confirma ou cancela a acção pendente" },
+  { dizer: "ajuda", faz: "Mostra esta lista" },
 ];
 
-/** Palavras que param a gravação mesmo sem a palavra de activação. */
+/** Frases inteiras que param a gravação. */
 export const PALAVRAS_PARAGEM = [
   "parar",
   "para",
@@ -631,10 +611,18 @@ export const PALAVRAS_PARAGEM = [
 
 /**
  * Durante a gravação aceita-se uma paragem directa: a frase é só uma
- * palavra de paragem (com ou sem "app" à frente).
+ * palavra ou frase de paragem, nunca uma palavra dentro do relatório.
  */
 export function ehParagemDirecta(texto: string): boolean {
-  const t = normalizar(texto).replace(/^(app|comando|ditar|ditado)[,\s]+/, "").trim();
+  const t = normalizar(texto);
   if (!t) return false;
   return PALAVRAS_PARAGEM.some((p) => normalizar(p) === t);
+}
+
+/** Durante o ditado nenhuma outra ordem pode mudar os campos ou exportar. */
+export function interpretarComandoEmContexto(texto: string, aGravar: boolean): Comando | null {
+  if (aGravar) {
+    return ehParagemDirecta(texto) ? { tipo: "parar-gravacao" } : null;
+  }
+  return interpretarComando(texto);
 }

@@ -36,9 +36,8 @@ import {
   COMANDOS_DESTRUTIVOS,
   COMANDOS_IMEDIATOS,
   PERGUNTAS_RESUMO,
-  extrairComando,
-  ehParagemDirecta,
-  interpretarComando,
+  normalizar,
+  interpretarComandoEmContexto,
   interpretarRespostaResumo,
   sugerirComandos,
   type CampoResumo,
@@ -841,7 +840,6 @@ function AppPage() {
 
   const [sugestoes, setSugestoes] = useState<SugestaoComando[]>([]);
   const ultimaFraseRef = useRef("");
-  const falhasSeguidasRef = useRef(0);
 
   const accoesRef = useRef({
     otimizarTexto,
@@ -874,7 +872,7 @@ function AppPage() {
     amostraActiva,
   };
 
-  const descreverComando = (c: Comando) => {
+  const descreverComando = useCallback((c: Comando) => {
     switch (c.tipo) {
       case "apagar-amostra":
         return "Apagar a amostra activa";
@@ -885,7 +883,7 @@ function AppPage() {
       default:
         return "Confirmar acção";
     }
-  };
+  }, []);
 
   const executar = useCallback((c: Comando) => {
     const a = accoesRef.current;
@@ -924,7 +922,7 @@ function AppPage() {
 
           // Escuta reactivada: o comando de paragem tem de continuar a funcionar.
           setVozSuspensa(false);
-          toast.success("A gravar — diga \"App, parar\" (ou Esc).");
+          toast.success("A gravar — parar / terminar / fim de ditado.");
         })();
         break;
       }
@@ -1030,6 +1028,15 @@ function AppPage() {
     }
   }, [irParaCampo, sairModoResumo]);
 
+  const executarOuConfirmar = useCallback((comando: Comando) => {
+    if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
+      setPendente({ comando, descricao: descreverComando(comando) });
+      toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
+      return;
+    }
+    executar(comando);
+  }, [descreverComando, executar]);
+
   const interimFeitoRef = useRef(false);
 
   const tratarFrase = useCallback(
@@ -1037,20 +1044,10 @@ function AppPage() {
       // Disparo imediato: comandos simples executam no resultado intermédio.
       if (!isFinal) {
         if (interimFeitoRef.current || campoResumoRef.current) return;
-        if (aGravarRef.current) {
-          if (ehParagemDirecta(transcript)) {
-            interimFeitoRef.current = true;
-            executar({ tipo: "parar-gravacao" });
-          }
-          return;
-        }
-        const corpoI = extrairComando(transcript);
-        if (corpoI === null) return;
-        const cI = interpretarComando(corpoI);
+        const cI = interpretarComandoEmContexto(transcript, aGravarRef.current);
         if (cI && COMANDOS_IMEDIATOS.has(cI.tipo)) {
           interimFeitoRef.current = true;
           setSugestoes([]);
-          falhasSeguidasRef.current = 0;
           executar(cI);
         }
         return;
@@ -1063,45 +1060,35 @@ function AppPage() {
 
       ultimaFraseRef.current = transcript;
 
+      // Antes de sugestões ou do resumo: durante o ditado só a paragem tem efeito.
+      const comando = interpretarComandoEmContexto(transcript, aGravarRef.current);
+      if (aGravarRef.current) {
+        if (comando) executar(comando);
+        return;
+      }
+
       // Se há sugestões pendentes, "sim" confirma a primeira; "não" descarta.
       if (sugestoes.length > 0) {
-        const t = transcript.toLowerCase().trim();
+        const t = normalizar(transcript);
         if (/^(sim|confirmar|yes|ok)$/.test(t)) {
           const s = sugestoes[0];
           if (s) {
             setSugestoes([]);
-            falhasSeguidasRef.current = 0;
-            executar(s.comando);
+            executarOuConfirmar(s.comando);
           }
           return;
         }
-        if (/^(nao|cancelar|não|nope)$/.test(t)) {
+        if (/^(nao|cancelar|nope)$/.test(t)) {
           setSugestoes([]);
-          falhasSeguidasRef.current = 0;
-          toast.info("Sugestão ignorada. Diga \"Comando, ajuda\" para ver os comandos.");
           return;
         }
       }
 
-      // Durante a gravação aceita-se "parar" sem a palavra de activação.
-      if (aGravarRef.current && ehParagemDirecta(transcript)) {
-        executar({ tipo: "parar-gravacao" });
-        return;
-      }
-
-      const corpo = extrairComando(transcript);
-
-      // Modo guiado do resumo técnico: respostas curtas, sem dizer "App".
+      // Modo guiado: valores curtos ou uma ordem directa para mudar de acção.
       const campo = campoResumoRef.current;
-      if (campo && !aGravarRef.current && corpo === null) {
+      if (campo) {
         const r = interpretarRespostaResumo(campo, transcript);
-        if (!r) {
-          toast.error(
-            `Não percebi. ${PERGUNTAS_RESUMO[campo].pergunta} ${PERGUNTAS_RESUMO[campo].exemplos}`,
-          );
-          return;
-        }
-
+        if (r) {
         const indice = CAMPOS_RESUMO.indexOf(campo);
 
         if (r.tipo === "sair") {
@@ -1135,64 +1122,21 @@ function AppPage() {
           toast.success("Resumo técnico preenchido.");
         }
         return;
-      }
-
-      if (corpo === null) {
-        // Fora da gravação, comandos directos sem "Comando" (só não destrutivos).
-        if (aGravarRef.current) return; // ditado normal
-        const directo = interpretarComando(transcript);
-        if (
-          directo &&
-          (COMANDOS_IMEDIATOS.has(directo.tipo) || directo.tipo === "analise")
-        ) {
-          falhasSeguidasRef.current = 0;
-          setSugestoes([]);
-          executar(directo);
         }
-        return;
       }
 
-      const comando = interpretarComando(corpo);
       if (!comando) {
-        if (aGravarRef.current) return; // ditado em curso: ignorar ruído
-
-        const sugestoesOuvidas = sugerirComandos(corpo);
-        const primeira = sugestoesOuvidas[0];
-        if (primeira && primeira.score >= 0.9) {
-          falhasSeguidasRef.current = 0;
-          executar(primeira.comando);
-          return;
-        }
-        if (sugestoesOuvidas.some((s) => s.score >= 0.6)) {
-          setSugestoes(sugestoesOuvidas.filter((s) => s.score >= 0.6));
-          toast.info("Não percebi bem. Queria um destes comandos?");
-          return;
-        }
-
-        falhasSeguidasRef.current += 1;
-        toast.error(`Comando não reconhecido: "${corpo}"`);
-        if (falhasSeguidasRef.current >= 2) {
-          setAjudaVoz(true);
-          toast.info("Abri a lista de comandos para ajudar.");
-          falhasSeguidasRef.current = 0;
-        }
+        // Conversa ou ruído: silêncio. Aproximações aparecem apenas como sugestões.
+        setSugestoes(sugerirComandos(transcript));
         return;
       }
 
-      falhasSeguidasRef.current = 0;
       setSugestoes([]);
-
-      // Durante a gravação o microfone pertence ao ditado:
-      // só se aceita parar.
-      if (aGravarRef.current && comando.tipo !== "parar-gravacao") {
-        return;
-      }
 
 
       if (comando.tipo === "ajuda") {
         setAjudaVoz(true);
         setSugestoes([]);
-        falhasSeguidasRef.current = 0;
         return;
       }
 
@@ -1225,18 +1169,9 @@ function AppPage() {
         return;
       }
 
-      if (COMANDOS_DESTRUTIVOS.has(comando.tipo)) {
-        setPendente({
-          comando,
-          descricao: descreverComando(comando),
-        });
-        toast.warning(`${descreverComando(comando)}? Diga "confirmar".`);
-        return;
-      }
-
-      executar(comando);
+      executarOuConfirmar(comando);
     },
-    [executar, irParaCampo, sairModoResumo, sugestoes, setSugestoes, setAjudaVoz],
+    [executar, executarOuConfirmar, irParaCampo, sairModoResumo, sugestoes],
   );
 
   const {
@@ -1322,8 +1257,7 @@ function AppPage() {
               sugestoes={sugestoes}
               onSugestao={(c) => {
                 setSugestoes([]);
-                falhasSeguidasRef.current = 0;
-                executar(c);
+                executarOuConfirmar(c);
               }}
             />
 

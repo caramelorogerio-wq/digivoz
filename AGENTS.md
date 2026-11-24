@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep voice parsing and recording-state restrictions in browser-safe pure helpers in `src/lib/comandos-voz.ts`, so command safety can be regression-tested without microphone hardware.
